@@ -1,6 +1,6 @@
 """Kyutai Pocket TTS (100M, CPU, streaming). Clones the designed reference where its cloning
 weights are available (a gated Hugging Face repo); else a built-in voice. Threads: TORCH_THREADS
-(default: all cores)."""
+(default: all cores). pocket_tts_gpu.py runs the same on CUDA."""
 import os
 
 from _util import mono
@@ -9,14 +9,18 @@ BUILTIN = {"en": "alba", "de": "juergen"}
 
 
 class Engine:
-    def __init__(self, lang, voice):
+    def __init__(self, lang, voice, device="cpu"):
         import torch
         from pocket_tts import TTSModel
 
-        torch.set_num_threads(int(os.environ.get("TORCH_THREADS", os.cpu_count() or 4)))
         self.m = TTSModel.load_model(language="german") if lang == "de" else TTSModel.load_model()
+        if device == "cpu":
+            torch.set_num_threads(int(os.environ.get("TORCH_THREADS", os.cpu_count() or 4)))
+            self.info = {"device": f"cpu ({torch.get_num_threads()} threads)"}
+        else:
+            self.m.to(device)
+            self.info = {"device": f"gpu ({torch.cuda.get_device_name(0)})"}
         self.sample_rate = self.m.sample_rate
-        self.info = {"device": f"cpu ({torch.get_num_threads()} threads)"}
         self.state = None
         if voice:
             try:

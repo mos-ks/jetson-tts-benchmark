@@ -12,13 +12,19 @@ DOCS = os.path.join(ROOT, "docs")
 AUDIO = os.path.join(DOCS, "audio")
 REPO = "https://github.com/mos-ks/jetson-tts-benchmark"
 
-# Every model in the run, in the order it runs; the page shows the ones not yet measured as queued.
+# Every model in the run, each small one's GPU run after its CPU run; the page shows the ones not
+# yet measured as queued.
 MODELS = [
     ("kokoro_current", "Kokoro-82M v0.19", "82M", "CPU, onnxruntime", "Apache-2.0", "a preset voice", "today's English voice (baseline)"),
+    ("kokoro_current_gpu", "Kokoro-82M v0.19", "82M", "GPU, onnxruntime CUDA", "Apache-2.0", "a preset voice", "the baseline on the GPU"),
     ("piper_current", "Piper (ramona-low, amy-medium)", "15-60M", "CPU, onnxruntime", "MIT (voices vary)", "a preset voice", "today's German voice (baseline)"),
+    ("piper_gpu", "Piper (ramona-low, amy-medium)", "15-60M", "GPU, onnxruntime CUDA", "MIT (voices vary)", "a preset voice", "the baseline on the GPU"),
     ("kokoro_v1", "Kokoro-82M v1.0", "82M", "CPU, onnxruntime", "Apache-2.0", "a preset voice", "English only"),
+    ("kokoro_v1_gpu", "Kokoro-82M v1.0", "82M", "GPU, onnxruntime CUDA", "Apache-2.0", "a preset voice", "English only"),
     ("pocket_tts", "Kyutai Pocket TTS", "100M", "CPU, PyTorch", "CC-BY-4.0", "clones the reference", "streams"),
+    ("pocket_tts_gpu", "Kyutai Pocket TTS", "100M", "GPU, PyTorch", "CC-BY-4.0", "clones the reference", "streams"),
     ("moss_nano", "MOSS-TTS-Nano-100M", "100M", "CPU, onnxruntime", "Apache-2.0", "clones the reference", "streams, 48 kHz"),
+    ("moss_nano_gpu", "MOSS-TTS-Nano-100M", "100M", "GPU, onnxruntime CUDA", "Apache-2.0", "clones the reference", "streams, 48 kHz"),
     ("qwen3_tts", "Qwen3-TTS 0.6B Base", "0.6B", "GPU, CUDA graphs", "Apache-2.0", "clones the reference", "streams (faster-qwen3-tts)"),
     ("chatterbox", "Chatterbox Turbo / Multilingual", "350M / 500M", "GPU, PyTorch", "MIT", "clones the reference", "sentence by sentence"),
     ("omnivoice", "OmniVoice", "0.6B", "GPU, fp16", "Apache-2.0", "clones the reference", "sentence by sentence"),
@@ -155,7 +161,7 @@ def plot():
             out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="6" class="pt {cls}"><title>{esc(p["name"])} ({p["lang"]}): {p["speed"]:.2f}x, UTMOS {p["mos"]:.2f}</title></circle>')
         else:
             out.append(f'<rect x="{x - 5.5:.1f}" y="{y - 5.5:.1f}" width="11" height="11" class="pt {cls}"><title>{esc(p["name"])} ({p["lang"]}): {p["speed"]:.2f}x, UTMOS {p["mos"]:.2f}</title></rect>')
-        label = f'{p["name"].split(" (")[0]} {p["lang"].upper()}'
+        label = f'{p["name"].split(" (")[0]}{" GPU" if p["key"].endswith("_gpu") else ""} {p["lang"].upper()}'
         ly = y - 10
         for (px, py) in placed:  # keep labels apart
             if abs(px - x) < 120 and abs(py - ly) < 14:
@@ -323,8 +329,8 @@ a:focus-visible, audio:focus-visible {{ outline: 2px solid var(--accent); outlin
 
   <section class="block notes" aria-labelledby="h-how">
     <h2 id="h-how">How it was measured</h2>
-    <p><b>Board.</b> Jetson Orin Nano Engineering Reference Developer Kit Super, 8 GB (7.4 GiB usable), JetPack 6.2 (L4T R36.4.3), CUDA 12.6, Python 3.10, 6 CPU cores, the board's default power mode. The board was serving other work at the time (a web backend and an idle Ollama), as it would in use.</p>
-    <p><b>Each model</b> in its own virtual environment (GPU models with PyTorch 2.8 from NVIDIA's Jetson AI Lab index), loaded once per language, warmed up once, then each line spoken once and timed.</p>
+    <p><b>Board.</b> Jetson Orin Nano Engineering Reference Developer Kit Super, 8 GB (7.4 GiB usable), JetPack 6.2 (L4T R36.4.3), CUDA 12.6, Python 3.10, 6 CPU cores, power mode MAXN SUPER. The board was serving other work at the time (a web backend and an idle Ollama), as it would in use.</p>
+    <p><b>Each model</b> in its own virtual environment (GPU runs with PyTorch 2.8 or onnxruntime-gpu 1.24 from NVIDIA's Jetson AI Lab index), loaded once per language, warmed up once, then each line spoken once and timed. One run at a time, and stopped if the board's free memory falls below 800 MB.</p>
     <p><b>Realism</b> is predicted, not a listening test: UTMOS (utmos22_strong) on every clip. It rewards clean, neutral read-aloud speech, so a plain preset voice can outscore a livelier one, and it says nothing about whether a voice sounds like anyone in particular. Listen to the clips to judge for yourself.</p>
   </section>
 </div>
