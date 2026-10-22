@@ -14,6 +14,15 @@ BENCH="${BENCH:-$HOME/ttsbench}"
 JETSON_INDEX="${JETSON_INDEX:-https://pypi.jetson-ai-lab.io/jp6/cu126}"
 ENV="$BENCH/envs/$MODEL"
 DIR="$BENCH/models/${MODEL%_gpu}"
+# Pocket TTS's small model runs from the large one's environment (the same package)
+case "$MODEL" in
+  pocket_tts_small|pocket_tts_small_gpu)
+    base="pocket_tts${MODEL#pocket_tts_small}"
+    bash "$0" "$base"
+    [ -e "$ENV" ] || ln -s "$BENCH/envs/$base" "$ENV"
+    echo "[setup] $MODEL ready: $ENV"
+    exit 0 ;;
+esac
 mkdir -p "$DIR"
 [ -x "$ENV/bin/python" ] || python3 -m venv "$ENV"
 PIP="$ENV/bin/pip"

@@ -1,0 +1,83 @@
+{
+ "model": "piper_gpu",
+ "when": "2026-10-22 19:13:29",
+ "base_used_mb": 2954,
+ "langs": {
+  "en": {
+   "load_s": 2.77,
+   "sample_rate": 22050,
+   "info": {
+    "voice": "en_US-amy-medium",
+    "device": "gpu (onnxruntime CUDA)"
+   }
+  },
+  "de": {
+   "load_s": 2.46,
+   "sample_rate": 16000,
+   "info": {
+    "voice": "de_DE-ramona-low",
+    "device": "gpu (onnxruntime CUDA)"
+   }
+  }
+ },
+ "lines": [
+  {
+   "id": "en1",
+   "lang": "en",
+   "ttfa_s": 0.37,
+   "total_s": 0.771,
+   "audio_s": 3.576,
+   "x_realtime": 4.64
+  },
+  {
+   "id": "en2",
+   "lang": "en",
+   "ttfa_s": 4.073,
+   "total_s": 4.469,
+   "audio_s": 5.492,
+   "x_realtime": 1.23
+  },
+  {
+   "id": "en3",
+   "lang": "en",
+   "ttfa_s": 0.392,
+   "total_s": 0.903,
+   "audio_s": 6.722,
+   "x_realtime": 7.44
+  },
+  {
+   "id": "de1",
+   "lang": "de",
+   "ttfa_s": 0.365,
+   "total_s": 0.765,
+   "audio_s": 3.44,
+   "x_realtime": 4.5
+  },
+  {
+   "id": "de2",
+   "lang": "de",
+   "ttfa_s": 0.389,
+   "total_s": 0.783,
+   "audio_s": 5.168,
+   "x_realtime": 6.6
+  },
+  {
+   "id": "de3",
+   "lang": "de",
+   "ttfa_s": 0.393,
+   "total_s": 0.791,
+   "audio_s": 4.48,
+   "x_realtime": 5.66
+  }
+ ],
+ "peak_used_mb": 3423,
+ "process_hwm_mb": 760,
+ "power_mw": {
+  "mean": 6136,
+  "max": 7777
+ },
+ "summary": {
+  "ttfa_ms_median": 392,
+  "x_realtime_median": 5.66
+ }
+}

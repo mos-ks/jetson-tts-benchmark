@@ -3,6 +3,9 @@
 # environment, every result under results/<model>/:
 #   bash run.sh [model ...]          # default: all of them
 # VOICES: the designed reference voices (voices.json and the clips); DESIGN: which one (warm).
+# LLM: an Ollama model (OLLAMA_URL) kept generating during each run, as when an assistant speaks
+# while its reply streams in; results then go under results/<model>_llm/.
+# TAG: results under results/<model>_<TAG>/ instead (a variant, e.g. TORCH_THREADS=2 TAG=t2).
 #
 # Safe on a board that serves other work:
 # - a model runs only when the memory free now covers what it needs (NEED_MB below; a GPU model
@@ -21,9 +24,13 @@ VOICES="${VOICES:-$HERE/voices}"
 DESIGN="${DESIGN:-warm}"
 HEADROOM_MB="${HEADROOM_MB:-512}"
 FLOOR_MB="${FLOOR_MB:-800}"
+LLM="${LLM:-}"
+TAG="${TAG:-${LLM:+llm}}"
+OLLAMA_URL="${OLLAMA_URL:-http://localhost:11434}"
 declare -A NEED_MB=(
   [kokoro_current]=700 [piper_current]=400 [kokoro_v1]=700 [pocket_tts]=1300 [moss_nano]=2500
-  [kokoro_current_gpu]=1500 [piper_gpu]=1200 [kokoro_v1_gpu]=1500 [pocket_tts_gpu]=2000 [moss_nano_gpu]=3000
+  [kokoro_current_gpu]=1500 [piper_gpu]=1200 [kokoro_v1_gpu]=1500 [pocket_tts_gpu]=1300 [moss_nano_gpu]=3000
+  [pocket_tts_small]=600 [pocket_tts_small_gpu]=1100
   [qwen3_tts]=2500 [chatterbox]=3600 [omnivoice]=3000
 )
 MODELS=("$@")
@@ -50,31 +57,38 @@ capped=0
 systemd-run --user --scope --quiet -p MemoryMax=1G true 2>/dev/null && capped=1
 [ "$capped" = 1 ] || echo "(no systemd user scope here: the watchdog alone guards the memory)"
 for m in "${MODELS[@]}"; do
-  echo "=== $m"
+  name="$m"; extra=()
+  [ -z "$TAG" ] || { name="${m}_${TAG}"; extra=(--name "$name"); }
+  if [ -n "$LLM" ]; then
+    extra+=(--llm "$LLM")
+    # the LLM in memory first, so the room left is what the TTS model really gets
+    curl -sf -o /dev/null "$OLLAMA_URL/api/generate" -d "{\"model\": \"$LLM\", \"prompt\": \"\", \"keep_alive\": \"10m\"}" || { echo "=== $name: $LLM did not load"; continue; }
+  fi
+  echo "=== $name"
   need="${NEED_MB[$m]:-3000}"
   have="$(free_mb)"
   if [ "$have" -lt $((need + HEADROOM_MB)) ]; then
     echo "skipped: needs ~${need} MB, ${have} MB free now"
-    note "$m" "needs about $need MB; $have MB were free on this board"
+    note "$name" "needs about $need MB; $have MB were free on this board"
     continue
   fi
   if ! bash "$HERE/setup/setup.sh" "$m" > "$HERE/results/setup_$m.log" 2>&1; then
     echo "setup failed: see results/setup_$m.log"; tail -5 "$HERE/results/setup_$m.log"; continue
   fi
-  run=(env BENCH="$BENCH" "$BENCH/envs/$m/bin/python" "$HERE/bench/bench.py" --model "$m" --out "$HERE/results" --voices "$VOICES" --design "$DESIGN")
+  run=(env BENCH="$BENCH" "$BENCH/envs/$m/bin/python" "$HERE/bench/bench.py" --model "$m" --out "$HERE/results" --voices "$VOICES" --design "$DESIGN" "${extra[@]}")
   [ "$capped" = 1 ] && run=(systemd-run --user --scope --quiet -p "MemoryMax=$((need + HEADROOM_MB))M" -p MemorySwapMax=0 "${run[@]}")
-  rm -f "$HERE/results/.stopped_$m"
+  rm -f "$HERE/results/.stopped_$name"
   # its own process group (setsid), the first the out-of-memory killer takes (oom_score_adj 1000)
-  setsid bash -c 'echo 1000 > /proc/self/oom_score_adj; exec "$@"' _ "${run[@]}" > "$HERE/results/run_$m.log" 2>&1 &
+  setsid bash -c 'echo 1000 > /proc/self/oom_score_adj; exec "$@"' _ "${run[@]}" > "$HERE/results/run_$name.log" 2>&1 &
   pid=$!
-  watchdog "$pid" "$m" &
+  watchdog "$pid" "$name" &
   dog=$!
   wait "$pid"
   kill "$dog" 2>/dev/null; wait "$dog" 2>/dev/null
-  if [ -s "$HERE/results/.stopped_$m" ]; then
-    low="$(cat "$HERE/results/.stopped_$m")"; rm -f "$HERE/results/.stopped_$m"
+  if [ -s "$HERE/results/.stopped_$name" ]; then
+    low="$(cat "$HERE/results/.stopped_$name")"; rm -f "$HERE/results/.stopped_$name"
     echo "stopped: the board's free memory fell to $low MB"
-    note "$m" "stopped when the board's free memory fell to $low MB (it started with $have MB free)"
+    note "$name" "stopped when the board's free memory fell to $low MB (it started with $have MB free)"
   fi
-  grep -v "^\s*$" "$HERE/results/run_$m.log" | tail -12
+  grep -v "^\s*$" "$HERE/results/run_$name.log" | tail -12
 done

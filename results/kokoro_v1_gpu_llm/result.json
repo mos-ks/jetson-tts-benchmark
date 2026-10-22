@@ -1,0 +1,62 @@
+{
+ "model": "kokoro_v1_gpu",
+ "when": "2026-10-22 19:44:23",
+ "base_used_mb": 5355,
+ "langs": {
+  "en": {
+   "load_s": 2.82,
+   "held_mb": 740,
+   "sample_rate": 24000,
+   "info": {
+    "voice": "af_heart",
+    "device": "gpu (onnxruntime CUDA)",
+    "model": "kokoro-v1.0.onnx"
+   }
+  },
+  "de": {
+   "error": "NotImplementedError: Kokoro has no German voice"
+  }
+ },
+ "lines": [
+  {
+   "id": "en1",
+   "lang": "en",
+   "ttfa_s": 0.386,
+   "total_s": 0.992,
+   "audio_s": 3.169,
+   "x_realtime": 3.19
+  },
+  {
+   "id": "en2",
+   "lang": "en",
+   "ttfa_s": 0.544,
+   "total_s": 1.299,
+   "audio_s": 4.313,
+   "x_realtime": 3.32
+  },
+  {
+   "id": "en3",
+   "lang": "en",
+   "ttfa_s": 0.626,
+   "total_s": 1.623,
+   "audio_s": 5.751,
+   "x_realtime": 3.54
+  }
+ ],
+ "llm": {
+  "model": "qwen2.5:3b",
+  "tok_s_alone": 15.9,
+  "tok_s_during": 22.1,
+  "runs_during": 1
+ },
+ "peak_used_mb": 6125,
+ "process_hwm_mb": 888,
+ "power_mw": {
+  "mean": 18637,
+  "max": 20117
+ },
+ "summary": {
+  "ttfa_ms_median": 544,
+  "x_realtime_median": 3.32
+ }
+}

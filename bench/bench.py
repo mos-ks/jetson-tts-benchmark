@@ -2,6 +2,7 @@
 """One TTS model on this Jetson, measured the same way as every other.
 
     python3 bench.py --model <name> --out results/ [--langs en,de] [--voices <dir> --design warm]
+                     [--llm <ollama model> --name <results folder>]
 
 For each sentence (sentences.json): one untimed warm-up of the first sentence, then each sentence
 once, timed: time to the first audio (the first chunk out of a streaming model; the whole clip for
@@ -18,8 +19,13 @@ Adapters live in adapters/<name>.py and define make(lang, voice) -> an object wi
 A model that cannot stream yields one chunk (or one per sentence, as an app would speak it).
 `voice` is the reference a voice-cloning model speaks with: {"wav": path, "text": its transcript}
 for the language (--voices: a folder with voices.json, as design/design.py writes it), or None.
+
+--llm: a local Ollama model (OLLAMA_URL, default http://localhost:11434) keeps generating the whole
+time the TTS model loads and speaks, as an assistant's reply streams in while its first sentence
+is spoken: on a Jetson both share one GPU. Its tokens per second alone (before the TTS model loads)
+and while the TTS model runs go into the result as "llm".
 """
-import argparse, importlib, importlib.util, json, os, re, subprocess, sys, threading, time, wave
+import argparse, importlib, importlib.util, json, os, re, subprocess, sys, threading, time, urllib.request, wave
 
 import numpy as np
 
@@ -80,6 +86,60 @@ class Watch:
             self._proc.terminate()
 
 
+class LLMLoad:
+    """A local Ollama model generating, over and over, while something else runs: its tokens per
+    second, counted as they stream in (one streamed piece is one token)."""
+
+    PROMPT = "Tell me, in detail and at length, how a small town changes over the four seasons of a year."
+
+    def __init__(self, model, url):
+        self.model, self.url = model, url.rstrip("/")
+        self.rates = []
+        self._stop = threading.Event()
+        self._thread = None
+
+    def _generate(self, max_tokens, stop=None):
+        body = json.dumps({"model": self.model, "prompt": self.PROMPT, "stream": True, "keep_alive": "10m", "options": {"num_predict": max_tokens}}).encode()
+        req = urllib.request.Request(self.url + "/api/generate", data=body, headers={"Content-Type": "application/json"})
+        first, n = None, 0
+        with urllib.request.urlopen(req, timeout=600) as r:
+            for line in r:
+                piece = json.loads(line)
+                if piece.get("response"):
+                    n += 1
+                    if first is None:
+                        first = time.perf_counter()
+                if piece.get("done") or (stop is not None and stop.is_set()):
+                    break
+        took = time.perf_counter() - first if first else 0
+        return (n - 1) / took if n > 1 and took > 0 else None
+
+    def alone(self):
+        self._generate(1)  # loaded and warm
+        return self._generate(200)
+
+    def start(self):
+        def loop():
+            while not self._stop.is_set():
+                try:
+                    rate = self._generate(200, self._stop)
+                except Exception as e:  # the server busy or away: say so, keep trying
+                    print(f"llm: {type(e).__name__}: {e}"[:200], flush=True)
+                    time.sleep(1)
+                    continue
+                if rate:
+                    self.rates.append(rate)
+
+        self._thread = threading.Thread(target=loop, daemon=True)
+        self._thread.start()
+        return self
+
+    def stop(self):
+        self._stop.set()
+        if self._thread:
+            self._thread.join(timeout=60)
+
+
 def write_wav(path, audio, sr):
     pcm = (np.clip(audio, -1, 1) * 32767).astype("<i2")
     with wave.open(path, "wb") as w:
@@ -109,6 +169,8 @@ def main():
     ap.add_argument("--langs", default="en,de")
     ap.add_argument("--voices", default=None, help="a folder of designed reference clips (voices.json)")
     ap.add_argument("--design", default="warm", help="which designed voice the cloning models speak with")
+    ap.add_argument("--llm", default=None, help="an Ollama model kept generating while the TTS model runs")
+    ap.add_argument("--name", default=None, help="the results folder (default: the model's name)")
     args = ap.parse_args()
     sentences = json.load(open(os.path.join(HERE, "sentences.json"), encoding="utf-8"))
     refs = {}
@@ -117,8 +179,13 @@ def main():
         for lang, ref in designs[args.design].items():
             if isinstance(ref, dict) and "wav" in ref:
                 refs[lang] = {"wav": os.path.join(args.voices, ref["wav"]), "text": ref["text"]}
-    out = os.path.join(args.out, args.model)
+    out = os.path.join(args.out, args.name or args.model)
     os.makedirs(out, exist_ok=True)
+    llm = None
+    if args.llm:
+        llm = LLMLoad(args.llm, os.environ.get("OLLAMA_URL", "http://localhost:11434"))
+        llm_alone = llm.alone()
+        llm.start()
     # an adapter is named after its model, often its package's own name (pocket_tts, chatterbox):
     # loaded under a name of its own, with the installed packages found first
     sys.path.append(os.path.join(HERE, "adapters"))
@@ -137,7 +204,9 @@ def main():
         except Exception as e:  # a model without this language, or one that fails to load
             result["langs"][lang] = {"error": f"{type(e).__name__}: {e}"[:400]}
             continue
-        result["langs"][lang] = {"load_s": round(load, 2), "sample_rate": engine.sample_rate, "info": getattr(engine, "info", None)}
+        # what it holds once loaded and warm (its peak, while loading, can be well above this)
+        held = round(used_mb() - result["base_used_mb"])
+        result["langs"][lang] = {"load_s": round(load, 2), "held_mb": held, "sample_rate": engine.sample_rate, "info": getattr(engine, "info", None)}
         for line in lines:
             try:
                 audio, ttfa, total = speak(engine, line["text"])
@@ -157,6 +226,15 @@ def main():
         except Exception:
             pass
     watch.stop()
+    if llm:
+        llm.stop()
+        during = sorted(llm.rates)
+        result["llm"] = {
+            "model": args.llm,
+            "tok_s_alone": round(llm_alone, 1) if llm_alone else None,
+            "tok_s_during": round(during[len(during) // 2], 1) if during else None,
+            "runs_during": len(during),
+        }
     result["peak_used_mb"] = round(watch.peak_used)
     result["process_hwm_mb"] = round(hwm_mb() or 0)
     if watch.power:

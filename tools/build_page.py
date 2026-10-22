@@ -23,6 +23,8 @@ MODELS = [
     ("kokoro_v1_gpu", "Kokoro-82M v1.0", "82M", "GPU, onnxruntime CUDA", "Apache-2.0", "a preset voice", "English only"),
     ("pocket_tts", "Kyutai Pocket TTS", "100M", "CPU, PyTorch", "CC-BY-4.0", "clones the reference", "streams"),
     ("pocket_tts_gpu", "Kyutai Pocket TTS", "100M", "GPU, PyTorch", "CC-BY-4.0", "clones the reference", "streams"),
+    ("pocket_tts_small", "Kyutai Pocket TTS small (english_18m)", "18M", "CPU, PyTorch", "CC-BY-4.0", "a preset voice", "English only, streams"),
+    ("pocket_tts_small_gpu", "Kyutai Pocket TTS small (english_18m)", "18M", "GPU, PyTorch", "CC-BY-4.0", "a preset voice", "English only, streams"),
     ("moss_nano", "MOSS-TTS-Nano-100M", "100M", "CPU, onnxruntime", "Apache-2.0", "clones the reference", "streams, 48 kHz"),
     ("moss_nano_gpu", "MOSS-TTS-Nano-100M", "100M", "GPU, onnxruntime CUDA", "Apache-2.0", "clones the reference", "streams, 48 kHz"),
     ("qwen3_tts", "Qwen3-TTS 0.6B Base", "0.6B", "GPU, CUDA graphs", "Apache-2.0", "clones the reference", "streams (faster-qwen3-tts)"),
@@ -70,8 +72,8 @@ for key, name, size, runs, lic, voice, note in MODELS:
     if not r:
         rows.append({"key": key, "name": name, "size": size, "runs": runs, "lang": "", "status": "queued", "note": note, "lic": lic, "voice": voice})
         continue
-    if r.get("skipped"):  # it did not fit in the memory free on the board
-        rows.append({"key": key, "name": name, "size": size, "runs": runs, "lang": "", "status": "skipped", "note": r["skipped"], "lic": lic, "voice": voice})
+    if r.get("skipped"):  # it did not fit in the memory free on the board (skipped, or stopped by the watchdog)
+        rows.append({"key": key, "name": name, "size": size, "runs": runs, "lang": "", "status": "too big", "note": r["skipped"], "lic": lic, "voice": voice})
         continue
     measured += 1
     clips = []
@@ -128,6 +130,34 @@ for d in DESIGNS:
 ref_mos = median(ref_scores)
 
 
+# ── speaking while an LLM writes (results/<model>_llm, run.sh with LLM=...) ────
+def lang_stats(r, lang):
+    lines = [l for l in (r or {}).get("lines", []) if l.get("lang") == lang and "x_realtime" in l]
+    if not lines:
+        return None, None
+    return median([l["ttfa_s"] * 1000 for l in lines]), median([l["x_realtime"] for l in lines])
+
+
+llm_rows = []
+for key, name, size, runs, lic, voice, note in MODELS:
+    rl = load(os.path.join(RESULTS, key + "_llm", "result.json"))
+    if not rl:
+        continue
+    if rl.get("skipped"):
+        llm_rows.append({"name": name, "runs": runs, "lang": "", "note": rl["skipped"]})
+        continue
+    r0 = load(os.path.join(RESULTS, key, "result.json"))
+    llm = rl.get("llm") or {}
+    for lang in ("en", "de"):
+        ttfa1, speed1 = lang_stats(rl, lang)
+        if speed1 is None:
+            continue
+        ttfa0, speed0 = lang_stats(r0, lang)
+        llm_rows.append({"name": name, "runs": runs, "lang": lang, "ttfa0": ttfa0, "ttfa1": ttfa1, "speed0": speed0, "speed1": speed1,
+                         "tok0": llm.get("tok_s_alone"), "tok1": llm.get("tok_s_during"), "llm": llm.get("model")})
+llm_model = next((r["llm"] for r in llm_rows if r.get("llm")), None)
+
+
 # ── the speed to realism plot (SVG, drawn to one scale) ──────────────────────
 def plot():
     W, H, L, R, T, B = 760, 380, 58, 20, 18, 52
@@ -180,7 +210,7 @@ def fmt(v, f, suffix=""):
 table = []
 for r in rows:
     st = r["status"]
-    pill = {"measured": "ok", "queued": "wait", "skipped": "wait", "failed": "bad"}[st]
+    pill = {"measured": "ok", "queued": "wait", "too big": "wait", "failed": "bad"}[st]
     lang = {"en": "English", "de": "German", "": ""}[r["lang"]]
     table.append(
         "<tr>"
@@ -195,6 +225,33 @@ for r in rows:
         f'<td><span class="pill {pill}">{st}</span>{"<span class=sub>" + esc(r["note"]) + "</span>" if r.get("note") and st != "measured" else ""}</td>'
         "</tr>"
     )
+
+def pair(a, b, f, suffix=""):
+    return f'{fmt(a, f, suffix)} &#8594; <b>{fmt(b, f, suffix)}</b>'
+
+
+llm_table = []
+for r in llm_rows:
+    lang = {"en": "English", "de": "German", "": ""}[r["lang"]]
+    if "note" in r:
+        llm_table.append(f'<tr><th scope="row">{esc(r["name"])}</th><td>{esc(r["runs"])}</td><td></td><td colspan="3"><span class="pill wait">too big</span><span class="sub">{esc(r["note"])}</span></td></tr>')
+        continue
+    llm_table.append(
+        f'<tr><th scope="row">{esc(r["name"])}</th><td>{esc(r["runs"])}</td><td>{lang}</td>'
+        f'<td class="num">{pair(r["ttfa0"], r["ttfa1"], "{:,.0f}", " ms")}</td>'
+        f'<td class="num">{pair(r["speed0"], r["speed1"], "{:.2f}", "&#215;")}</td>'
+        f'<td class="num">{pair(r["tok0"], r["tok1"], "{:.1f}")}</td></tr>'
+    )
+llm_section = "" if not llm_table else f"""
+  <section class="block" aria-labelledby="h-llm">
+    <h2 id="h-llm">Speaking while the LLM writes</h2>
+    <p>An assistant speaks its first sentence while the rest of its reply is still being written, and on a Jetson the TTS model and the LLM share one GPU. Here {esc(llm_model or "a local LLM")} (Ollama) kept generating the whole time each TTS model loaded and spoke. Each cell: alone &#8594; <b>together</b>. The LLM's rate comes from one to four 200-token answers per run, so read it as rough (a few tokens per second either way); the TTS columns are medians over three lines.</p>
+    <div class="scroll panel"><table>
+      <thead><tr><th scope="col">Model</th><th scope="col">Runs on</th><th scope="col">Language</th><th scope="col" class="num">First audio</th><th scope="col" class="num">Speed</th><th scope="col" class="num">LLM tokens/s</th></tr></thead>
+      <tbody>{''.join(llm_table)}</tbody>
+    </table></div>
+  </section>
+"""
 
 listen = []
 for key, name, runs, clips in players:
@@ -316,6 +373,7 @@ a:focus-visible, audio:focus-visible {{ outline: 2px solid var(--accent); outlin
     <p class="status">Medians over the three lines per language, after one untimed warm-up. First audio: the first streamed chunk (for a model that does not stream: the first sentence). Speed: seconds of speech per second of synthesis. Extra memory: the board's used memory at its highest during the run, over what it was before (CPU and GPU share the 8 GB). Power: the board's input (VDD_IN) while it speaks.</p>
   </section>
 
+{llm_section}
   <section class="block" aria-labelledby="h-listen">
     <h2 id="h-listen">Listen</h2>
     <div class="grid2">{''.join(listen) or '<p>No clips yet.</p>'}</div>
@@ -331,6 +389,8 @@ a:focus-visible, audio:focus-visible {{ outline: 2px solid var(--accent); outlin
     <h2 id="h-how">How it was measured</h2>
     <p><b>Board.</b> Jetson Orin Nano Engineering Reference Developer Kit Super, 8 GB (7.4 GiB usable), JetPack 6.2 (L4T R36.4.3), CUDA 12.6, Python 3.10, 6 CPU cores, power mode MAXN SUPER. The board was serving other work at the time (a web backend and an idle Ollama), as it would in use.</p>
     <p><b>Each model</b> in its own virtual environment (GPU runs with PyTorch 2.8 or onnxruntime-gpu 1.24 from NVIDIA's Jetson AI Lab index), loaded once per language, warmed up once, then each line spoken once and timed. One run at a time, and stopped if the board's free memory falls below 800 MB.</p>
+    <p><b>Threads.</b> The CPU runs use all 6 cores. Pocket TTS was also run with 1, 2 and 4 threads: the 100M model stays at 0.51 to 0.56&#215; at any count, and the small English model is fastest on one thread (1.23&#215;, against 1.05&#215; on six).</p>
+    <p><b>Too big.</b> A run is stopped when the board's free memory falls below 800 MB. OmniVoice, Qwen3-TTS 0.6B, Chatterbox and MOSS-TTS-Nano on the GPU (also with ONNX Runtime's lean arena settings) each reached that floor while loading or warming up, starting from 4.3 to 5.2 GB free: on an 8 GB Orin Nano they need the board nearly to themselves.</p>
     <p><b>Realism</b> is predicted, not a listening test: UTMOS (utmos22_strong) on every clip. It rewards clean, neutral read-aloud speech, so a plain preset voice can outscore a livelier one, and it says nothing about whether a voice sounds like anyone in particular. Listen to the clips to judge for yourself.</p>
   </section>
 </div>
@@ -346,11 +406,23 @@ for r in rows:
         f"| {r['name']} | {r['runs']} | {dict(en='English', de='German').get(r['lang'], '')} | "
         f"{'' if r.get('ttfa') is None else f'{r['ttfa']:,.0f} ms'} | {'' if r.get('speed') is None else f'{r['speed']:.2f}x'} | "
         f"{'' if r.get('mos') is None else f'{r['mos']:.2f}'} | {'' if r.get('extra_mb') is None else f'{r['extra_mb']:+,.0f} MB'} | "
-        f"{'' if r.get('watts') is None else f'{r['watts']:.1f} W'} | {r['status']} |"
+        f"{'' if r.get('watts') is None else f'{r['watts']:.1f} W'} | {r['status']}{': ' + r['note'] if r['status'] in ('too big', 'failed') and r.get('note') else ''} |"
     )
 readme = os.path.join(ROOT, "README.md")
 if os.path.exists(readme):
     s = open(readme, encoding="utf-8").read()
     s = re.sub(r"<!-- results -->.*<!-- /results -->", "<!-- results -->\n" + "\n".join(md) + f"\n\n_{measured} of {total} measured, {stamp}._\n<!-- /results -->", s, flags=re.S)
+    if llm_rows:
+        md2 = [f"While {llm_model or 'a local LLM'} (Ollama) keeps generating on the same GPU; each cell alone -> together. "
+               "The LLM's rate comes from one to four 200-token answers per run, so read it as rough.", "",
+               "| Model | Runs on | Language | First audio | Speed | LLM tokens/s |", "|---|---|---|---:|---:|---:|"]
+        for r in llm_rows:
+            if "note" in r:
+                md2.append(f"| {r['name']} | {r['runs']} | | too big: {r['note']} | | |")
+                continue
+            f = lambda v, spec, suf="": "–" if v is None else spec.format(v) + suf
+            md2.append(f"| {r['name']} | {r['runs']} | {dict(en='English', de='German')[r['lang']]} | {f(r['ttfa0'], '{:,.0f}', ' ms')} -> {f(r['ttfa1'], '{:,.0f}', ' ms')} | "
+                       f"{f(r['speed0'], '{:.2f}', 'x')} -> {f(r['speed1'], '{:.2f}', 'x')} | {f(r['tok0'], '{:.1f}')} -> {f(r['tok1'], '{:.1f}')} |")
+        s = re.sub(r"<!-- llm -->.*<!-- /llm -->", lambda _: "<!-- llm -->\n" + "\n".join(md2) + "\n<!-- /llm -->", s, flags=re.S)
     open(readme, "w", encoding="utf-8").write(s)
 print(f"page: {measured} of {total} measured, {len(points)} points, {sum(len(c) for *_, c in players)} clips")

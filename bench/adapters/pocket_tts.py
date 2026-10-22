@@ -9,11 +9,11 @@ BUILTIN = {"en": "alba", "de": "juergen"}
 
 
 class Engine:
-    def __init__(self, lang, voice, device="cpu"):
+    def __init__(self, lang, voice, device="cpu", config=None):
         import torch
         from pocket_tts import TTSModel
 
-        self.m = TTSModel.load_model(language="german") if lang == "de" else TTSModel.load_model()
+        self.m = TTSModel.load_model(language=config or ("german" if lang == "de" else None))
         if device == "cpu":
             torch.set_num_threads(int(os.environ.get("TORCH_THREADS", os.cpu_count() or 4)))
             self.info = {"device": f"cpu ({torch.get_num_threads()} threads)"}

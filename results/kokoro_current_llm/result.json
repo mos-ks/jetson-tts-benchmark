@@ -1,0 +1,62 @@
+{
+ "model": "kokoro_current",
+ "when": "2026-10-22 19:44:46",
+ "base_used_mb": 5424,
+ "langs": {
+  "en": {
+   "load_s": 2.83,
+   "held_mb": 246,
+   "sample_rate": 24000,
+   "info": {
+    "voice": "af_bella",
+    "device": "cpu (onnxruntime)",
+    "model": "kokoro-v0_19.onnx"
+   }
+  },
+  "de": {
+   "error": "NotImplementedError: Kokoro has no German voice"
+  }
+ },
+ "lines": [
+  {
+   "id": "en1",
+   "lang": "en",
+   "ttfa_s": 1.48,
+   "total_s": 4.076,
+   "audio_s": 2.901,
+   "x_realtime": 0.71
+  },
+  {
+   "id": "en2",
+   "lang": "en",
+   "ttfa_s": 1.993,
+   "total_s": 4.454,
+   "audio_s": 3.925,
+   "x_realtime": 0.88
+  },
+  {
+   "id": "en3",
+   "lang": "en",
+   "ttfa_s": 2.578,
+   "total_s": 6.044,
+   "audio_s": 5.419,
+   "x_realtime": 0.9
+  }
+ ],
+ "llm": {
+  "model": "qwen2.5:3b",
+  "tok_s_alone": 20.7,
+  "tok_s_during": 17.9,
+  "runs_during": 3
+ },
+ "peak_used_mb": 5767,
+ "process_hwm_mb": 795,
+ "power_mw": {
+  "mean": 20590,
+  "max": 22029
+ },
+ "summary": {
+  "ttfa_ms_median": 1993,
+  "x_realtime_median": 0.88
+ }
+}
