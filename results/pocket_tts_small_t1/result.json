@@ -1,0 +1,56 @@
+{
+ "model": "pocket_tts_small",
+ "when": "2026-10-22 20:15:30",
+ "base_used_mb": 2679,
+ "langs": {
+  "en": {
+   "load_s": 7.31,
+   "held_mb": 427,
+   "sample_rate": 24000,
+   "info": {
+    "device": "cpu (1 threads)",
+    "voice": "built-in: alba",
+    "model": "english_18m_2026-10"
+   }
+  },
+  "de": {
+   "error": "NotImplementedError: Pocket TTS has no small German model"
+  }
+ },
+ "lines": [
+  {
+   "id": "en1",
+   "lang": "en",
+   "ttfa_s": 0.224,
+   "total_s": 2.216,
+   "audio_s": 2.64,
+   "x_realtime": 1.19
+  },
+  {
+   "id": "en2",
+   "lang": "en",
+   "ttfa_s": 0.228,
+   "total_s": 2.921,
+   "audio_s": 3.6,
+   "x_realtime": 1.23
+  },
+  {
+   "id": "en3",
+   "lang": "en",
+   "ttfa_s": 0.241,
+   "total_s": 4.032,
+   "audio_s": 5.04,
+   "x_realtime": 1.25
+  }
+ ],
+ "peak_used_mb": 3154,
+ "process_hwm_mb": 622,
+ "power_mw": {
+  "mean": 7092,
+  "max": 8055
+ },
+ "summary": {
+  "ttfa_ms_median": 228,
+  "x_realtime_median": 1.23
+ }
+}

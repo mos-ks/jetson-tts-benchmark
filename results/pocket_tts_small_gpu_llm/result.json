@@ -1,0 +1,62 @@
+{
+ "model": "pocket_tts_small_gpu",
+ "when": "2026-10-22 20:22:22",
+ "base_used_mb": 4725,
+ "langs": {
+  "en": {
+   "load_s": 6.71,
+   "held_mb": 1111,
+   "sample_rate": 24000,
+   "info": {
+    "device": "gpu (Orin)",
+    "voice": "built-in: alba",
+    "model": "english_18m_2026-10"
+   }
+  },
+  "de": {
+   "error": "NotImplementedError: Pocket TTS has no small German model"
+  }
+ },
+ "lines": [
+  {
+   "id": "en1",
+   "lang": "en",
+   "ttfa_s": 0.419,
+   "total_s": 4.815,
+   "audio_s": 3.12,
+   "x_realtime": 0.65
+  },
+  {
+   "id": "en2",
+   "lang": "en",
+   "ttfa_s": 0.36,
+   "total_s": 5.706,
+   "audio_s": 3.68,
+   "x_realtime": 0.64
+  },
+  {
+   "id": "en3",
+   "lang": "en",
+   "ttfa_s": 0.377,
+   "total_s": 6.802,
+   "audio_s": 4.96,
+   "x_realtime": 0.73
+  }
+ ],
+ "llm": {
+  "model": "qwen2.5:3b",
+  "tok_s_alone": 21.2,
+  "tok_s_during": 17.2,
+  "runs_during": 3
+ },
+ "peak_used_mb": 5891,
+ "process_hwm_mb": 1104,
+ "power_mw": {
+  "mean": 18274,
+  "max": 20705
+ },
+ "summary": {
+  "ttfa_ms_median": 377,
+  "x_realtime_median": 0.65
+ }
+}

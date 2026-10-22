@@ -1,0 +1,91 @@
+{
+ "model": "piper_current",
+ "when": "2026-10-22 19:45:25",
+ "base_used_mb": 5076,
+ "langs": {
+  "en": {
+   "load_s": 1.65,
+   "held_mb": 160,
+   "sample_rate": 22050,
+   "info": {
+    "voice": "en_US-amy-medium",
+    "device": "cpu (onnxruntime)"
+   }
+  },
+  "de": {
+   "load_s": 1.43,
+   "held_mb": 151,
+   "sample_rate": 16000,
+   "info": {
+    "voice": "de_DE-ramona-low",
+    "device": "cpu (onnxruntime)"
+   }
+  }
+ },
+ "lines": [
+  {
+   "id": "en1",
+   "lang": "en",
+   "ttfa_s": 0.097,
+   "total_s": 0.345,
+   "audio_s": 3.471,
+   "x_realtime": 10.07
+  },
+  {
+   "id": "en2",
+   "lang": "en",
+   "ttfa_s": 0.23,
+   "total_s": 0.552,
+   "audio_s": 5.526,
+   "x_realtime": 10.02
+  },
+  {
+   "id": "en3",
+   "lang": "en",
+   "ttfa_s": 0.229,
+   "total_s": 0.759,
+   "audio_s": 6.56,
+   "x_realtime": 8.64
+  },
+  {
+   "id": "de1",
+   "lang": "de",
+   "ttfa_s": 0.076,
+   "total_s": 0.259,
+   "audio_s": 3.04,
+   "x_realtime": 11.74
+  },
+  {
+   "id": "de2",
+   "lang": "de",
+   "ttfa_s": 0.194,
+   "total_s": 0.441,
+   "audio_s": 5.152,
+   "x_realtime": 11.69
+  },
+  {
+   "id": "de3",
+   "lang": "de",
+   "ttfa_s": 0.21,
+   "total_s": 0.35,
+   "audio_s": 4.128,
+   "x_realtime": 11.81
+  }
+ ],
+ "llm": {
+  "model": "qwen2.5:3b",
+  "tok_s_alone": 21.2,
+  "tok_s_during": 23.8,
+  "runs_during": 1
+ },
+ "peak_used_mb": 5275,
+ "process_hwm_mb": 235,
+ "power_mw": {
+  "mean": 20167,
+  "max": 21796
+ },
+ "summary": {
+  "ttfa_ms_median": 210,
+  "x_realtime_median": 11.69
+ }
+}

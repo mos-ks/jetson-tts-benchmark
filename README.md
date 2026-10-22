@@ -12,24 +12,53 @@ It was made to pick a self-hosted voice for a personal assistant that runs on a 
 | Model | Runs on | Language | First audio | Speed | Realism (UTMOS) | Extra memory | Power | Status |
 |---|---|---|---:|---:|---:|---:|---:|---|
 | Kokoro-82M v0.19 | CPU, onnxruntime | English | 1,742 ms | 1.08x | 4.07 | +568 MB | 7.7 W | measured |
+| Kokoro-82M v0.19 | GPU, onnxruntime CUDA | English | 441 ms | 4.05x | 4.10 | +2,108 MB | 6.9 W | measured |
 | Piper (ramona-low, amy-medium) | CPU, onnxruntime | English | 181 ms | 12.11x | 4.22 | +180 MB | 8.1 W | measured |
 | Piper (ramona-low, amy-medium) | CPU, onnxruntime | German | 129 ms | 15.41x | 2.46 | +180 MB | 8.1 W | measured |
+| Piper (ramona-low, amy-medium) | GPU, onnxruntime CUDA | English | 392 ms | 4.64x | 4.48 | +469 MB | 6.1 W | measured |
+| Piper (ramona-low, amy-medium) | GPU, onnxruntime CUDA | German | 389 ms | 5.66x | 2.48 | +469 MB | 6.1 W | measured |
 | Kokoro-82M v1.0 | CPU, onnxruntime | English | 1,266 ms | 1.43x | 4.44 | +435 MB | 9.7 W | measured |
+| Kokoro-82M v1.0 | GPU, onnxruntime CUDA | English | 340 ms | 5.83x | 4.44 | +697 MB | 9.1 W | measured |
 | Kyutai Pocket TTS | CPU, PyTorch | English | 408 ms | 0.51x | 4.44 | +922 MB | 7.0 W | measured |
 | Kyutai Pocket TTS | CPU, PyTorch | German | 386 ms | 0.51x | 3.34 | +922 MB | 7.0 W | measured |
-| MOSS-TTS-Nano-100M | CPU, onnxruntime |  |  |  |  |  |  | queued |
-| Qwen3-TTS 0.6B Base | GPU, CUDA graphs |  |  |  |  |  |  | queued |
-| Chatterbox Turbo / Multilingual | GPU, PyTorch |  |  |  |  |  |  | queued |
-| OmniVoice | GPU, fp16 |  |  |  |  |  |  | queued |
+| Kyutai Pocket TTS | GPU, PyTorch | English | 194 ms | 1.53x | 4.42 | +1,109 MB | 7.8 W | measured |
+| Kyutai Pocket TTS | GPU, PyTorch | German | 193 ms | 1.53x | 3.28 | +1,109 MB | 7.8 W | measured |
+| Kyutai Pocket TTS small (english_18m) | CPU, PyTorch | English | 258 ms | 1.05x | 4.42 | +330 MB | 6.5 W | measured |
+| Kyutai Pocket TTS small (english_18m) | GPU, PyTorch | English | 224 ms | 1.36x | 4.36 | +841 MB | 7.1 W | measured |
+| MOSS-TTS-Nano-100M | CPU, onnxruntime | English | 1,941 ms | 0.50x | 3.79 | +1,572 MB | 9.5 W | measured |
+| MOSS-TTS-Nano-100M | CPU, onnxruntime | German | 1,492 ms | 0.51x | 3.10 | +1,572 MB | 9.5 W | measured |
+| MOSS-TTS-Nano-100M | GPU, onnxruntime CUDA |  |  |  |  |  |  | too big: stopped when the board's free memory fell to 789 MB (it started with 4269 MB free) |
+| Qwen3-TTS 0.6B Base | GPU, CUDA graphs |  |  |  |  |  |  | too big: stopped when the board's free memory fell to 738 MB (it started with 4319 MB free) |
+| Chatterbox Turbo / Multilingual | GPU, PyTorch |  |  |  |  |  |  | too big: stopped when the board's free memory fell to 781 MB (it started with 4364 MB free) |
+| OmniVoice | GPU, fp16 |  |  |  |  |  |  | too big: stopped when the board's free memory fell to 736 MB (it started with 5158 MB free) |
 
-_4 of 8 measured, 2026-10-22 18:05._
+_11 of 15 measured, 2026-10-22 21:00._
 <!-- /results -->
 
 **First audio**: the first streamed chunk (for a model that does not stream: the first sentence). **Speed**: seconds of speech per second of synthesis (above 1x it keeps up with itself). **Realism**: UTMOS (utmos22_strong), a predictor of listeners' mean opinion score from 1 to 5, trained on English, so German scores are rougher; listen to the clips. **Extra memory**: the board's used memory at its highest during the run, over what it was before (CPU and GPU share the 8 GB). **Power**: the board's input power (VDD_IN, tegrastats) while it speaks. Medians over the three lines per language.
 
+## Speaking while the LLM writes
+
+An assistant speaks its first sentence while the rest of its reply is still being written, and on a Jetson the TTS model and the LLM share one GPU (`LLM=qwen2.5:3b bash run.sh <model>`).
+
+<!-- llm -->
+While qwen2.5:3b (Ollama) keeps generating on the same GPU; each cell alone -> together. The LLM's rate comes from one to four 200-token answers per run, so read it as rough.
+
+| Model | Runs on | Language | First audio | Speed | LLM tokens/s |
+|---|---|---|---:|---:|---:|
+| Kokoro-82M v0.19 | CPU, onnxruntime | English | 1,742 ms -> 1,993 ms | 1.08x -> 0.88x | 20.7 -> 17.9 |
+| Piper (ramona-low, amy-medium) | CPU, onnxruntime | English | 181 ms -> 229 ms | 12.11x -> 10.02x | 21.2 -> 23.8 |
+| Piper (ramona-low, amy-medium) | CPU, onnxruntime | German | 129 ms -> 194 ms | 15.41x -> 11.74x | 21.2 -> 23.8 |
+| Kokoro-82M v1.0 | GPU, onnxruntime CUDA | English | 340 ms -> 544 ms | 5.83x -> 3.32x | 15.9 -> 22.1 |
+| Kyutai Pocket TTS | GPU, PyTorch | English | 194 ms -> 235 ms | 1.53x -> 0.91x | 21.2 -> 16.9 |
+| Kyutai Pocket TTS | GPU, PyTorch | German | 193 ms -> 224 ms | 1.53x -> 0.88x | 21.2 -> 16.9 |
+| Kyutai Pocket TTS small (english_18m) | CPU, PyTorch | English | 258 ms -> 226 ms | 1.05x -> 1.09x | 20.9 -> 21.7 |
+| Kyutai Pocket TTS small (english_18m) | GPU, PyTorch | English | 224 ms -> 377 ms | 1.36x -> 0.65x | 21.2 -> 17.2 |
+<!-- /llm -->
+
 ## The board
 
-Jetson Orin Nano Engineering Reference Developer Kit Super, 8 GB (7.4 GiB usable), JetPack 6.2 (L4T R36.4.3), CUDA 12.6, Python 3.10, 6 Cortex-A78AE cores, power mode MAXN SUPER. It was serving other work during the runs (a web backend and an idle Ollama), as it would in use; about 3.9 GiB was free.
+Jetson Orin Nano Engineering Reference Developer Kit Super, 8 GB (7.4 GiB usable), JetPack 6.2 (L4T R36.4.3), CUDA 12.6, Python 3.10, 6 Cortex-A78AE cores, power mode MAXN SUPER. It was serving other work during the runs (a web backend, and Ollama with its model unloaded unless a run says otherwise), as it would in use; 3.9 to 5 GiB was free.
 
 ## Run it yourself
 

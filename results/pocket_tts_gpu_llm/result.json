@@ -1,0 +1,93 @@
+{
+ "model": "pocket_tts_gpu",
+ "when": "2026-10-22 19:43:09",
+ "base_used_mb": 4707,
+ "langs": {
+  "en": {
+   "load_s": 7.53,
+   "held_mb": 1395,
+   "sample_rate": 24000,
+   "info": {
+    "device": "gpu (Orin)",
+    "clone_error": "ValueError: We could not download the weights for the model with voice cloning, but you're trying to use voice cloning. Without voice cloning, you can use our catalog of voices ['cosette', 'marius', '",
+    "voice": "built-in: alba"
+   }
+  },
+  "de": {
+   "load_s": 1.84,
+   "held_mb": 1929,
+   "sample_rate": 24000,
+   "info": {
+    "device": "gpu (Orin)",
+    "clone_error": "ValueError: We could not download the weights for the model with voice cloning, but you're trying to use voice cloning. Without voice cloning, you can use our catalog of voices ['cosette', 'marius', '",
+    "voice": "built-in: juergen"
+   }
+  }
+ },
+ "lines": [
+  {
+   "id": "en1",
+   "lang": "en",
+   "ttfa_s": 0.138,
+   "total_s": 3.253,
+   "audio_s": 2.96,
+   "x_realtime": 0.91
+  },
+  {
+   "id": "en2",
+   "lang": "en",
+   "ttfa_s": 0.235,
+   "total_s": 4.341,
+   "audio_s": 3.76,
+   "x_realtime": 0.87
+  },
+  {
+   "id": "en3",
+   "lang": "en",
+   "ttfa_s": 0.243,
+   "total_s": 5.178,
+   "audio_s": 4.72,
+   "x_realtime": 0.91
+  },
+  {
+   "id": "de1",
+   "lang": "de",
+   "ttfa_s": 0.203,
+   "total_s": 4.364,
+   "audio_s": 3.84,
+   "x_realtime": 0.88
+  },
+  {
+   "id": "de2",
+   "lang": "de",
+   "ttfa_s": 0.224,
+   "total_s": 5.112,
+   "audio_s": 4.96,
+   "x_realtime": 0.97
+  },
+  {
+   "id": "de3",
+   "lang": "de",
+   "ttfa_s": 0.231,
+   "total_s": 5.277,
+   "audio_s": 4.56,
+   "x_realtime": 0.86
+  }
+ ],
+ "llm": {
+  "model": "qwen2.5:3b",
+  "tok_s_alone": 21.2,
+  "tok_s_during": 16.9,
+  "runs_during": 4
+ },
+ "peak_used_mb": 6642,
+ "process_hwm_mb": 1666,
+ "power_mw": {
+  "mean": 18229,
+  "max": 20350
+ },
+ "summary": {
+  "ttfa_ms_median": 231,
+  "x_realtime_median": 0.91
+ }
+}
