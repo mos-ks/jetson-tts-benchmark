@@ -28,7 +28,7 @@ jetson_torch() {
 
 case "$MODEL" in
   kokoro_current)
-    # the app's own English voice: kokoro-onnx 0.3.3 reads the v0.19 model (numpy < 2, as the app pins)
+    # Kokoro v0.19 as many existing setups run it: kokoro-onnx 0.3.3 reads that model (with numpy < 2)
     "$PIP" install -q "kokoro-onnx==0.3.3" "numpy<2"
     fetch https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files/kokoro-v0_19.onnx "$DIR/kokoro-v0_19.onnx"
     fetch https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files/voices.json "$DIR/voices.json"

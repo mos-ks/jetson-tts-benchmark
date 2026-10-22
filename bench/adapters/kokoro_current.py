@@ -1,5 +1,5 @@
 """The baseline in English: Kokoro-82M v0.19 through kokoro-onnx 0.3.3 on the CPU, one sentence at
-a time, voice af_bella (as the app this benchmark is for speaks today). Kokoro has no German."""
+a time, voice af_bella: a common setup on a Jetson today. Kokoro has no German."""
 from _util import models, sentences, mono
 
 VOICE = "af_bella"

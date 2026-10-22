@@ -143,7 +143,7 @@ def plot():
     if ref_mos:
         y = Y(ref_mos)
         out.append(f'<line x1="{L}" x2="{W - R}" y1="{y:.1f}" y2="{y:.1f}" class="ref"/>')
-        out.append(f'<text x="{W - R - 6}" y="{y - 6:.1f}" class="reflabel" text-anchor="end">the designed Ami voice ({ref_mos:.2f})</text>')
+        out.append(f'<text x="{W - R - 6}" y="{y - 6:.1f}" class="reflabel" text-anchor="end">the designed reference voice ({ref_mos:.2f})</text>')
     placed = []
     for p in sorted(points, key=lambda p: (p["speed"], p["mos"])):
         x, y = X(min(max(p["speed"], 0.26), 31)), Y(min(max(p["mos"], ymin + 0.02), ymax - 0.02))

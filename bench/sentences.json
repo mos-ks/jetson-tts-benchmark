@@ -1,5 +1,5 @@
 {
-  "comment": "What Ami says, in her house voice (warm, short, invites): the same lines for every model, so speed and sound compare like for like.",
+  "comment": "What a voice assistant says (warm, short): the same lines for every model, so speed and sound compare like for like.",
   "en": [
     {"id": "en1", "text": "Good morning! I saved your three tasks for today."},
     {"id": "en2", "text": "You've been at it for two hours. How about a glass of water and a little stretch?"},

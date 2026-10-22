@@ -26,11 +26,11 @@
   "en3": 4.442
  },
  "voices": {
-  "ami_bright_de": 3.228,
-  "ami_bright_en": 3.502,
-  "ami_soft_de": 4.24,
-  "ami_soft_en": 4.387,
-  "ami_warm_de": 3.939,
-  "ami_warm_en": 3.614
+  "bright_de": 3.99,
+  "bright_en": 4.196,
+  "soft_de": 4.233,
+  "soft_en": 4.428,
+  "warm_de": 4.166,
+  "warm_en": 3.733
  }
 }

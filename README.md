@@ -4,7 +4,7 @@ How fast, how heavy and how natural open text-to-speech models are on a **Jetson
 
 **Listen to every clip and see the speed-to-realism plot: <https://mos-ks.github.io/jetson-tts-benchmark/>**
 
-It was made to find a better voice for [Ami](https://amplaif.com), a personal companion app that runs on a Jetson: today she speaks with Kokoro-82M v0.19 (English) and Piper (German), and the goal is a voice that sounds like her own, fast enough to answer without a pause, on the same board.
+It was made to pick a self-hosted voice for a personal assistant that runs on a Jetson, in place of Kokoro-82M v0.19 (English) and Piper (German): a voice of its own, fast enough to answer without a pause, on the same board.
 
 ## Results
 
@@ -22,7 +22,7 @@ It was made to find a better voice for [Ami](https://amplaif.com), a personal co
 | Chatterbox Turbo / Multilingual | GPU, PyTorch |  |  |  |  |  |  | queued |
 | OmniVoice | GPU, fp16 |  |  |  |  |  |  | queued |
 
-_4 of 8 measured, 2026-10-22 16:54._
+_4 of 8 measured, 2026-10-22 17:01._
 <!-- /results -->
 
 **First audio**: the first streamed chunk (for a model that does not stream: the first sentence). **Speed**: seconds of speech per second of synthesis (above 1x it keeps up with itself). **Realism**: UTMOS (utmos22_strong), a predictor of listeners' mean opinion score from 1 to 5, trained on English, so German scores are rougher; listen to the clips. **Extra memory**: the board's used memory at its highest during the run, over what it was before (CPU and GPU share the 8 GB). **Power**: the board's input power (VDD_IN, tegrastats) while it speaks. Medians over the three lines per language.
