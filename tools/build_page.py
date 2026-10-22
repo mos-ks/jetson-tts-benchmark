@@ -129,7 +129,7 @@ def plot():
     out = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="Speed against realism for each model and language" class="plot">']
     # slower than speech
     out.append(f'<rect x="{L}" y="{T}" width="{X(1) - L:.1f}" height="{H - T - B}" class="slow"/>')
-    out.append(f'<text x="{L + 8}" y="{T + 16}" class="zone">slower than she speaks</text>')
+    out.append(f'<text x="{L + 8}" y="{H - B - 10}" class="zone">slower than real time</text>')
     for v in (0.25, 0.5, 1, 2, 4, 8, 16, 32):
         x = X(v)
         out.append(f'<line x1="{x:.1f}" x2="{x:.1f}" y1="{T}" y2="{H - B}" class="{"edge" if v == 1 else "grid"}"/>')

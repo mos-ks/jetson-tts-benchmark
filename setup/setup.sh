@@ -17,7 +17,14 @@ mkdir -p "$DIR"
 PIP="$ENV/bin/pip"
 "$PIP" install -q -U pip wheel
 fetch() { [ -s "$2" ] || curl -fL --retry 3 -o "$2" "$1"; }
-jetson_torch() { "$PIP" install -q "torch==2.8.0" "torchaudio==2.8.0" --index-url "$JETSON_INDEX" --extra-index-url https://pypi.org/simple; }
+# NVIDIA's CUDA build of PyTorch for Jetson, over whatever generic build a package pulled in (PyPI's
+# aarch64 torch 2.8.0 is CPU-only and has the same version number, so pip keeps it): run AFTER the
+# model's own install, and refuse to go on without CUDA.
+jetson_torch() {
+  "$PIP" install -q --force-reinstall --no-deps "torch==2.8.0" "torchaudio==2.8.0" --index-url "$JETSON_INDEX"
+  "$PIP" install -q "numpy<2"   # that build is compiled against NumPy 1.x
+  "$ENV/bin/python" -c "import torch, sys; ok = torch.cuda.is_available(); torch.zeros(2).numpy(); print('[setup] torch', torch.__version__, 'cuda', ok); sys.exit(0 if ok else 3)"
+}
 
 case "$MODEL" in
   kokoro_current)
@@ -53,19 +60,17 @@ case "$MODEL" in
     [ -d "$DIR/src" ] || git clone -q --depth 1 https://github.com/OpenMOSS/MOSS-TTS-Nano.git "$DIR/src"
     ;;
   qwen3_tts)
-    jetson_torch
     "$PIP" install -q faster-qwen3-tts
+    jetson_torch
     ;;
   chatterbox)
-    jetson_torch
     [ -d "$DIR/src" ] || git clone -q https://github.com/resemble-ai/chatterbox "$DIR/src"
     # it pins torch 2.6; the Jetson index has 2.8 (as jetson-containers does it: unpin)
     sed -i 's/==/>=/g' "$DIR/src/pyproject.toml"
     "$PIP" install -q -e "$DIR/src"
-    jetson_torch   # keep the Jetson build if the install pulled a generic one
+    jetson_torch
     ;;
   omnivoice)
-    jetson_torch
     "$PIP" install -q omnivoice
     jetson_torch
     ;;
