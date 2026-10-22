@@ -22,7 +22,7 @@ It was made to pick a self-hosted voice for a personal assistant that runs on a 
 | Chatterbox Turbo / Multilingual | GPU, PyTorch |  |  |  |  |  |  | queued |
 | OmniVoice | GPU, fp16 |  |  |  |  |  |  | queued |
 
-_4 of 8 measured, 2026-10-22 17:01._
+_4 of 8 measured, 2026-10-22 18:05._
 <!-- /results -->
 
 **First audio**: the first streamed chunk (for a model that does not stream: the first sentence). **Speed**: seconds of speech per second of synthesis (above 1x it keeps up with itself). **Realism**: UTMOS (utmos22_strong), a predictor of listeners' mean opinion score from 1 to 5, trained on English, so German scores are rougher; listen to the clips. **Extra memory**: the board's used memory at its highest during the run, over what it was before (CPU and GPU share the 8 GB). **Power**: the board's input power (VDD_IN, tegrastats) while it speaks. Medians over the three lines per language.
@@ -38,6 +38,8 @@ git clone https://github.com/mos-ks/jetson-tts-benchmark && cd jetson-tts-benchm
 bash run.sh                       # every model, one at a time
 bash run.sh kokoro_v1 pocket_tts  # or just these
 ```
+
+**On a board that serves other work**, `run.sh` runs a model only when the memory free covers what it needs (`NEED_MB`), and inside a systemd scope capped at that, so a model that takes more is stopped, not the board. (A first run without this pushed an 8 GB board running a 3B chat model into swap with Qwen3-TTS, at 7.5 GB, until it was power-cycled: the GPU models here need about 3 to 4.5 GB, which an 8 GB Orin Nano does not have free next to a loaded LLM.)
 
 `setup/setup.sh <model>` makes each model its own virtual environment under `~/ttsbench/envs/` (GPU models take PyTorch 2.8 from NVIDIA's Jetson AI Lab index, `jp6/cu126`) and fetches its files; `bench/bench.py` measures it and writes `results/<model>/result.json` and a WAV per line. Then, on any machine with PyTorch (a GPU helps):
 

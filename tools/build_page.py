@@ -64,6 +64,9 @@ for key, name, size, runs, lic, voice, note in MODELS:
     if not r:
         rows.append({"key": key, "name": name, "size": size, "runs": runs, "lang": "", "status": "queued", "note": note, "lic": lic, "voice": voice})
         continue
+    if r.get("skipped"):  # it did not fit in the memory free on the board
+        rows.append({"key": key, "name": name, "size": size, "runs": runs, "lang": "", "status": "skipped", "note": r["skipped"], "lic": lic, "voice": voice})
+        continue
     measured += 1
     clips = []
     for lang in ("en", "de"):
@@ -171,7 +174,7 @@ def fmt(v, f, suffix=""):
 table = []
 for r in rows:
     st = r["status"]
-    pill = {"measured": "ok", "queued": "wait", "failed": "bad"}[st]
+    pill = {"measured": "ok", "queued": "wait", "skipped": "wait", "failed": "bad"}[st]
     lang = {"en": "English", "de": "German", "": ""}[r["lang"]]
     table.append(
         "<tr>"
