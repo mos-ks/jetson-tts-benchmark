@@ -46,8 +46,9 @@ case "$MODEL" in
     "$PIP" install -q pocket-tts
     ;;
   moss_nano)
-    # its ONNX runtime: onnxruntime on the CPU (CPU torch only to read the reference clip)
-    "$PIP" install -q torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+    # its ONNX runtime: onnxruntime on the CPU (CPU torch only to read the reference clip; 2.8,
+    # since torchaudio 2.9 reads audio only through torchcodec)
+    "$PIP" install -q "torch==2.8.0" "torchaudio==2.8.0" --index-url https://download.pytorch.org/whl/cpu
     "$PIP" install -q numpy sentencepiece soundfile onnxruntime huggingface_hub
     [ -d "$DIR/src" ] || git clone -q --depth 1 https://github.com/OpenMOSS/MOSS-TTS-Nano.git "$DIR/src"
     ;;

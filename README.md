@@ -15,14 +15,14 @@ It was made to find a better voice for [Ami](https://amplaif.com), a personal co
 | Piper (ramona-low, amy-medium) | CPU, onnxruntime | English | 181 ms | 12.11x | 4.22 | +180 MB | 8.1 W | measured |
 | Piper (ramona-low, amy-medium) | CPU, onnxruntime | German | 129 ms | 15.41x | 2.46 | +180 MB | 8.1 W | measured |
 | Kokoro-82M v1.0 | CPU, onnxruntime | English | 1,266 ms | 1.43x | 4.44 | +435 MB | 9.7 W | measured |
-| Kyutai Pocket TTS | CPU, PyTorch | English |  |  |  |  |  | failed |
-| Kyutai Pocket TTS | CPU, PyTorch | German |  |  |  |  |  | failed |
+| Kyutai Pocket TTS | CPU, PyTorch | English | 408 ms | 0.51x | 4.44 | +922 MB | 7.0 W | measured |
+| Kyutai Pocket TTS | CPU, PyTorch | German | 386 ms | 0.51x | 3.34 | +922 MB | 7.0 W | measured |
 | MOSS-TTS-Nano-100M | CPU, onnxruntime |  |  |  |  |  |  | queued |
 | Qwen3-TTS 0.6B Base | GPU, CUDA graphs |  |  |  |  |  |  | queued |
 | Chatterbox Turbo / Multilingual | GPU, PyTorch |  |  |  |  |  |  | queued |
 | OmniVoice | GPU, fp16 |  |  |  |  |  |  | queued |
 
-_4 of 8 measured, 2026-10-22 16:41._
+_4 of 8 measured, 2026-10-22 16:49._
 <!-- /results -->
 
 **First audio**: the first streamed chunk (for a model that does not stream: the first sentence). **Speed**: seconds of speech per second of synthesis (above 1x it keeps up with itself). **Realism**: UTMOS (utmos22_strong), a predictor of listeners' mean opinion score from 1 to 5, trained on English, so German scores are rougher; listen to the clips. **Extra memory**: the board's used memory at its highest during the run, over what it was before (CPU and GPU share the 8 GB). **Power**: the board's input power (VDD_IN, tegrastats) while it speaks. Medians over the three lines per language.
