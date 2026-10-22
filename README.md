@@ -29,7 +29,7 @@ _4 of 8 measured, 2026-10-22 18:05._
 
 ## The board
 
-Jetson Orin Nano Engineering Reference Developer Kit Super, 8 GB (7.4 GiB usable), JetPack 6.2 (L4T R36.4.3), CUDA 12.6, Python 3.10, 6 Cortex-A78AE cores, default power mode. It was serving other work during the runs (a web backend and an idle Ollama), as it would in use; about 3.9 GiB was free.
+Jetson Orin Nano Engineering Reference Developer Kit Super, 8 GB (7.4 GiB usable), JetPack 6.2 (L4T R36.4.3), CUDA 12.6, Python 3.10, 6 Cortex-A78AE cores, power mode MAXN SUPER. It was serving other work during the runs (a web backend and an idle Ollama), as it would in use; about 3.9 GiB was free.
 
 ## Run it yourself
 
@@ -39,9 +39,11 @@ bash run.sh                       # every model, one at a time
 bash run.sh kokoro_v1 pocket_tts  # or just these
 ```
 
-**On a board that serves other work**, `run.sh` runs a model only when the memory free covers what it needs (`NEED_MB`), and inside a systemd scope capped at that, so a model that takes more is stopped, not the board. (A first run without this pushed an 8 GB board running a 3B chat model into swap with Qwen3-TTS, at 7.5 GB, until it was power-cycled: the GPU models here need about 3 to 4.5 GB, which an 8 GB Orin Nano does not have free next to a loaded LLM.)
+**On a board that serves other work**, `run.sh` runs a model only when the memory free covers what it needs (`NEED_MB`), inside a systemd scope capped at that, with the out-of-memory killer pointed at it first, and with a watchdog that stops it the moment the board's free memory falls below 800 MB (`FLOOR_MB`). The watchdog is the one that counts for GPU models: on a Jetson the GPU's memory is the same RAM, and CUDA's allocations are not charged to the scope. (A first run without these pushed an 8 GB board running a 3B chat model into swap with Qwen3-TTS, at 7.5 GB, until it was power-cycled.)
 
-`setup/setup.sh <model>` makes each model its own virtual environment under `~/ttsbench/envs/` (GPU models take PyTorch 2.8 from NVIDIA's Jetson AI Lab index, `jp6/cu126`) and fetches its files; `bench/bench.py` measures it and writes `results/<model>/result.json` and a WAV per line. Then, on any machine with PyTorch (a GPU helps):
+The small models run twice, on the CPU and on the GPU (`<model>_gpu`: onnxruntime-gpu's CUDA execution provider, or PyTorch on CUDA).
+
+`setup/setup.sh <model>` makes each model its own virtual environment under `~/ttsbench/envs/` (GPU runs take PyTorch 2.8 or onnxruntime-gpu 1.24 from NVIDIA's Jetson AI Lab index, `jp6/cu126`) and fetches its files; `bench/bench.py` measures it and writes `results/<model>/result.json` and a WAV per line. Then, on any machine with PyTorch (a GPU helps):
 
 ```bash
 python tools/mos.py          # UTMOS for every clip -> results/mos.json
