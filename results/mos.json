@@ -1,0 +1,28 @@
+{
+ "kokoro_current": {
+  "en1": 4.042,
+  "en2": 4.068,
+  "en3": 4.098
+ },
+ "kokoro_v1": {
+  "en1": 4.452,
+  "en2": 4.441,
+  "en3": 4.402
+ },
+ "piper_current": {
+  "de1": 2.234,
+  "de2": 2.536,
+  "de3": 2.455,
+  "en1": 4.414,
+  "en2": 4.198,
+  "en3": 4.22
+ },
+ "voices": {
+  "ami_bright_de": 3.228,
+  "ami_bright_en": 3.502,
+  "ami_soft_de": 4.24,
+  "ami_soft_en": 4.387,
+  "ami_warm_de": 3.939,
+  "ami_warm_en": 3.614
+ }
+}

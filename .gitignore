@@ -1,0 +1,4 @@
+results/**/*.wav
+results/*.log
+__pycache__/
+*.pyc

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jetson TTS Benchmark</title>
+<meta name="description" content="Open text-to-speech models on an 8 GB Jetson Orin Nano Super: first-audio latency, speed, memory, power and predicted naturalness, with every clip to listen to.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* One column that reads top to bottom: the answer (plot), the numbers (table), then the evidence (every clip). */
+:root {
+  --bg: #f5f4f8; --panel: #ffffff; --fg: #1c1a24; --muted: #66617a; --line: #dddae6;
+  --accent: #6a4dc4; --olive: #6f7c22; --slow: #f1e9f7; --good: #2c7a4b; --warn: #a8661f; --bad: #b23a3a;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14121b; --panel: #1c1a25; --fg: #ece9f5; --muted: #a39cb6; --line: #2f2b3c;
+  --accent: #a891ff; --olive: #c2cf6c; --slow: #251d33; --good: #6fcf97; --warn: #e3a35a; --bad: #ef7d7d; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #14121b; --panel: #1c1a25; --fg: #ece9f5; --muted: #a39cb6; --line: #2f2b3c;
+  --accent: #a891ff; --olive: #c2cf6c; --slow: #251d33; --good: #6fcf97; --warn: #e3a35a; --bad: #ef7d7d; color-scheme: dark; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 var(--body); }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 24px; font-weight: 700; }
+h3 { font-size: 18px; font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+.lede { display: grid; gap: 12px; }
+.lede p { color: var(--muted); font-size: 18px; }
+.status { font-family: var(--mono); font-size: 13px; color: var(--muted); letter-spacing: 0.02em; }
+.status b { color: var(--accent); }
+section.block { display: grid; gap: 14px; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.plot { width: 100%; height: auto; display: block; }
+.plot .grid { stroke: var(--line); stroke-width: 1; }
+.plot .edge { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.plot .slow { fill: var(--slow); }
+.plot .zone, .plot .tick, .plot .axis { fill: var(--muted); font: 12px var(--mono); }
+.plot .axis { font-size: 12px; }
+.plot .ref { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 2 4; }
+.plot .reflabel { fill: var(--accent); font: 12px var(--body); }
+.plot .pt.en { fill: var(--accent); }
+.plot .pt.de { fill: var(--olive); }
+.plot .plabel { fill: var(--fg); font: 600 12px var(--body); }
+.legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 14px; color: var(--muted); }
+.legend i { display: inline-block; width: 11px; height: 11px; margin-right: 6px; vertical-align: -1px; }
+.legend .en { background: var(--accent); border-radius: 50%; }
+.legend .de { background: var(--olive); }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 860px; font-size: 14px; }
+th, td { text-align: left; padding: 10px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+thead th { font: 600 12px var(--mono); color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+tbody th { font-weight: 700; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.sub { display: block; font-weight: 400; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.pill { display: inline-block; font: 600 11px var(--mono); padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; text-transform: uppercase; letter-spacing: 0.04em; }
+.pill.ok { color: var(--good); } .pill.wait { color: var(--warn); } .pill.bad { color: var(--bad); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.model, .voice { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.runs, .brief { color: var(--muted); font-size: 14px; }
+.clips { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.said { font-size: 15px; }
+audio { width: 100%; height: 36px; }
+.meta { font: 12px var(--mono); color: var(--muted); }
+.notes { display: grid; gap: 10px; color: var(--muted); font-size: 15px; }
+.notes b { color: var(--fg); }
+a { color: var(--accent); }
+a:focus-visible, audio:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="lede">
+    <h1>Jetson TTS Benchmark</h1>
+    <p>Open text-to-speech models on an 8 GB Jetson Orin Nano Super, measured the way a voice assistant would use them: how soon the first audio comes, how many times faster than real time it speaks, how much memory and power it takes, and how natural it sounds. Every model says the same six lines, three in English and three in German; the ones that clone a voice all speak with the same designed reference voice.</p>
+    <p class="status"><b>4 of 8</b> models measured &#183; updated 2026-10-22 16:41 &#183; <a href="https://github.com/mos-ks/jetson-tts-benchmark">scripts and raw results</a></p>
+  </header>
+
+  <section class="block" aria-labelledby="h-plot">
+    <h2 id="h-plot">Speed against realism</h2>
+    <div class="panel"><svg viewBox="0 0 760 380" role="img" aria-label="Speed against realism for each model and language" class="plot">
+<rect x="58" y="18" width="194.9" height="310" class="slow"/>
+<text x="66" y="34" class="zone">slower than she speaks</text>
+<line x1="58.0" x2="58.0" y1="18" y2="328" class="grid"/>
+<text x="58.0" y="346" class="tick" text-anchor="middle">0.25&#215;</text>
+<line x1="155.4" x2="155.4" y1="18" y2="328" class="grid"/>
+<text x="155.4" y="346" class="tick" text-anchor="middle">0.5&#215;</text>
+<line x1="252.9" x2="252.9" y1="18" y2="328" class="edge"/>
+<text x="252.9" y="346" class="tick" text-anchor="middle">1&#215;</text>
+<line x1="350.3" x2="350.3" y1="18" y2="328" class="grid"/>
+<text x="350.3" y="346" class="tick" text-anchor="middle">2&#215;</text>
+<line x1="447.7" x2="447.7" y1="18" y2="328" class="grid"/>
+<text x="447.7" y="346" class="tick" text-anchor="middle">4&#215;</text>
+<line x1="545.1" x2="545.1" y1="18" y2="328" class="grid"/>
+<text x="545.1" y="346" class="tick" text-anchor="middle">8&#215;</text>
+<line x1="642.6" x2="642.6" y1="18" y2="328" class="grid"/>
+<text x="642.6" y="346" class="tick" text-anchor="middle">16&#215;</text>
+<line x1="740.0" x2="740.0" y1="18" y2="328" class="grid"/>
+<text x="740.0" y="346" class="tick" text-anchor="middle">32&#215;</text>
+<line x1="58" x2="740" y1="328.0" y2="328.0" class="grid"/>
+<text x="50" y="332.0" class="tick" text-anchor="end">1.5</text>
+<line x1="58" x2="740" y1="276.3" y2="276.3" class="grid"/>
+<text x="50" y="280.3" class="tick" text-anchor="end">2</text>
+<line x1="58" x2="740" y1="224.7" y2="224.7" class="grid"/>
+<text x="50" y="228.7" class="tick" text-anchor="end">2.5</text>
+<line x1="58" x2="740" y1="173.0" y2="173.0" class="grid"/>
+<text x="50" y="177.0" class="tick" text-anchor="end">3</text>
+<line x1="58" x2="740" y1="121.3" y2="121.3" class="grid"/>
+<text x="50" y="125.3" class="tick" text-anchor="end">3.5</text>
+<line x1="58" x2="740" y1="69.7" y2="69.7" class="grid"/>
+<text x="50" y="73.7" class="tick" text-anchor="end">4</text>
+<line x1="58" x2="740" y1="18.0" y2="18.0" class="grid"/>
+<text x="50" y="22.0" class="tick" text-anchor="end">4.5</text>
+<text x="399.0" y="372" class="axis" text-anchor="middle">speed: seconds of speech per second of work (log scale)</text>
+<text transform="translate(14 173.0) rotate(-90)" class="axis" text-anchor="middle">realism (UTMOS, 1-5)</text>
+<line x1="58" x2="740" y1="109.6" y2="109.6" class="ref"/>
+<text x="734" y="103.6" class="reflabel" text-anchor="end">the designed Ami voice (3.61)</text>
+<circle cx="263.7" cy="62.6" r="6" class="pt en"><title>Kokoro-82M v0.19 (en): 1.08x, UTMOS 4.07</title></circle>
+<text x="273.7" y="52.6" class="plabel" text-anchor="start">Kokoro-82M v0.19 EN</text>
+<circle cx="303.1" cy="24.1" r="6" class="pt en"><title>Kokoro-82M v1.0 (en): 1.43x, UTMOS 4.44</title></circle>
+<text x="313.1" y="14.1" class="plabel" text-anchor="start">Kokoro-82M v1.0 EN</text>
+<circle cx="603.4" cy="46.9" r="6" class="pt en"><title>Piper (ramona-low, amy-medium) (en): 12.11x, UTMOS 4.22</title></circle>
+<text x="593.4" y="36.9" class="plabel" text-anchor="end">Piper EN</text>
+<rect x="631.8" y="223.8" width="11" height="11" class="pt de"><title>Piper (ramona-low, amy-medium) (de): 15.41x, UTMOS 2.46</title></rect>
+<text x="627.3" y="219.3" class="plabel" text-anchor="end">Piper DE</text>
+</svg></div>
+    <div class="legend"><span><i class="en"></i>English</span><span><i class="de"></i>German</span><span>Right of the dashed line it speaks faster than real time. Realism is UTMOS, a predictor of listeners' opinion scores (1 to 5), trained on English: German scores are rougher.</span></div>
+  </section>
+
+  <section class="block" aria-labelledby="h-table">
+    <h2 id="h-table">Results</h2>
+    <div class="scroll panel"><table>
+      <thead><tr><th scope="col">Model</th><th scope="col">Runs on</th><th scope="col">Language</th><th scope="col" class="num">First audio</th><th scope="col" class="num">Speed</th><th scope="col" class="num">Realism</th><th scope="col" class="num">Extra memory</th><th scope="col" class="num">Power</th><th scope="col">Voice</th><th scope="col">Status</th></tr></thead>
+      <tbody><tr><th scope="row">Kokoro-82M v0.19<span class="sub">82M &#183; Apache-2.0</span></th><td>CPU, onnxruntime</td><td>English</td><td class="num">1,742 ms</td><td class="num">1.08&#215;</td><td class="num">4.07</td><td class="num">+568 MB</td><td class="num">7.7 W</td><td>af_bella</td><td><span class="pill ok">measured</span></td></tr><tr><th scope="row">Piper (ramona-low, amy-medium)<span class="sub">15-60M &#183; MIT (voices vary)</span></th><td>CPU, onnxruntime</td><td>English</td><td class="num">181 ms</td><td class="num">12.11&#215;</td><td class="num">4.22</td><td class="num">+180 MB</td><td class="num">8.1 W</td><td>en_US-amy-medium</td><td><span class="pill ok">measured</span></td></tr><tr><th scope="row">Piper (ramona-low, amy-medium)<span class="sub">15-60M &#183; MIT (voices vary)</span></th><td>CPU, onnxruntime</td><td>German</td><td class="num">129 ms</td><td class="num">15.41&#215;</td><td class="num">2.46</td><td class="num">+180 MB</td><td class="num">8.1 W</td><td>de_DE-ramona-low</td><td><span class="pill ok">measured</span></td></tr><tr><th scope="row">Kokoro-82M v1.0<span class="sub">82M &#183; Apache-2.0</span></th><td>CPU, onnxruntime</td><td>English</td><td class="num">1,266 ms</td><td class="num">1.43&#215;</td><td class="num">4.44</td><td class="num">+435 MB</td><td class="num">9.7 W</td><td>af_heart</td><td><span class="pill ok">measured</span></td></tr><tr><th scope="row">Kyutai Pocket TTS<span class="sub">100M &#183; CC-BY-4.0</span></th><td>CPU, PyTorch</td><td>English</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td>clones the reference</td><td><span class="pill bad">failed</span><span class=sub>ImportError: cannot import name &#x27;TTSModel&#x27; from &#x27;pocket_tts&#x27; (/home/c/ttsbench/jetson-tts-benchmark/bench/adapters/pocket_tts.py)</span></td></tr><tr><th scope="row">Kyutai Pocket TTS<span class="sub">100M &#183; CC-BY-4.0</span></th><td>CPU, PyTorch</td><td>German</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td>clones the reference</td><td><span class="pill bad">failed</span><span class=sub>ImportError: cannot import name &#x27;TTSModel&#x27; from &#x27;pocket_tts&#x27; (/home/c/ttsbench/jetson-tts-benchmark/bench/adapters/pocket_tts.py)</span></td></tr><tr><th scope="row">MOSS-TTS-Nano-100M<span class="sub">100M &#183; Apache-2.0</span></th><td>CPU, onnxruntime</td><td></td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td>clones the reference</td><td><span class="pill wait">queued</span><span class=sub>streams, 48 kHz</span></td></tr><tr><th scope="row">Qwen3-TTS 0.6B Base<span class="sub">0.6B &#183; Apache-2.0</span></th><td>GPU, CUDA graphs</td><td></td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td>clones the reference</td><td><span class="pill wait">queued</span><span class=sub>streams (faster-qwen3-tts)</span></td></tr><tr><th scope="row">Chatterbox Turbo / Multilingual<span class="sub">350M / 500M &#183; MIT</span></th><td>GPU, PyTorch</td><td></td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td>clones the reference</td><td><span class="pill wait">queued</span><span class=sub>sentence by sentence</span></td></tr><tr><th scope="row">OmniVoice<span class="sub">0.6B &#183; Apache-2.0</span></th><td>GPU, fp16</td><td></td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td class="num">&#8211;</td><td>clones the reference</td><td><span class="pill wait">queued</span><span class=sub>sentence by sentence</span></td></tr></tbody>
+    </table></div>
+    <p class="status">Medians over the three lines per language, after one untimed warm-up. First audio: the first streamed chunk (for a model that does not stream: the first sentence). Speed: seconds of speech per second of synthesis. Extra memory: the board's used memory at its highest during the run, over what it was before (CPU and GPU share the 8 GB). Power: the board's input (VDD_IN) while it speaks.</p>
+  </section>
+
+  <section class="block" aria-labelledby="h-listen">
+    <h2 id="h-listen">Listen</h2>
+    <div class="grid2"><section class="model" id="kokoro_current"><h3>Kokoro-82M v0.19</h3><p class="runs">CPU, onnxruntime</p><ul class="clips"><li><p class="said" lang="en">Good morning! I saved your three tasks for today.</p><audio controls preload="none" src="audio/kokoro_current_en1.mp3"></audio><p class="meta">first audio 1,039 ms &#183; 1.03&#215; real time &#183; UTMOS 4.04</p></li><li><p class="said" lang="en">You&#x27;ve been at it for two hours. How about a glass of water and a little stretch?</p><audio controls preload="none" src="audio/kokoro_current_en2.mp3"></audio><p class="meta">first audio 1,742 ms &#183; 1.08&#215; real time &#183; UTMOS 4.07</p></li><li><p class="said" lang="en">That&#x27;s your fifth gym day in a row. I&#x27;m really proud of you, and I bet your legs have opinions about it.</p><audio controls preload="none" src="audio/kokoro_current_en3.mp3"></audio><p class="meta">first audio 1,746 ms &#183; 1.25&#215; real time &#183; UTMOS 4.10</p></li></ul></section><section class="model" id="piper_current"><h3>Piper (ramona-low, amy-medium)</h3><p class="runs">CPU, onnxruntime</p><ul class="clips"><li><p class="said" lang="en">Good morning! I saved your three tasks for today.</p><audio controls preload="none" src="audio/piper_current_en1.mp3"></audio><p class="meta">first audio 78 ms &#183; 12.11&#215; real time &#183; UTMOS 4.41</p></li><li><p class="said" lang="en">You&#x27;ve been at it for two hours. How about a glass of water and a little stretch?</p><audio controls preload="none" src="audio/piper_current_en2.mp3"></audio><p class="meta">first audio 181 ms &#183; 12.37&#215; real time &#183; UTMOS 4.20</p></li><li><p class="said" lang="en">That&#x27;s your fifth gym day in a row. I&#x27;m really proud of you, and I bet your legs have opinions about it.</p><audio controls preload="none" src="audio/piper_current_en3.mp3"></audio><p class="meta">first audio 296 ms &#183; 9.81&#215; real time &#183; UTMOS 4.22</p></li><li><p class="said" lang="de">Guten Morgen! Ich habe deine drei Aufgaben für heute gespeichert.</p><audio controls preload="none" src="audio/piper_current_de1.mp3"></audio><p class="meta">first audio 52 ms &#183; 14.56&#215; real time &#183; UTMOS 2.23</p></li><li><p class="said" lang="de">Du sitzt jetzt seit zwei Stunden dran. Wie wär&#x27;s mit einem Glas Wasser und einer kleinen Pause?</p><audio controls preload="none" src="audio/piper_current_de2.mp3"></audio><p class="meta">first audio 129 ms &#183; 15.41&#215; real time &#183; UTMOS 2.54</p></li><li><p class="said" lang="de">Das ist schon dein fünfter Tag in Folge im Gym. Ich bin richtig stolz auf dich.</p><audio controls preload="none" src="audio/piper_current_de3.mp3"></audio><p class="meta">first audio 156 ms &#183; 15.51&#215; real time &#183; UTMOS 2.46</p></li></ul></section><section class="model" id="kokoro_v1"><h3>Kokoro-82M v1.0</h3><p class="runs">CPU, onnxruntime</p><ul class="clips"><li><p class="said" lang="en">Good morning! I saved your three tasks for today.</p><audio controls preload="none" src="audio/kokoro_v1_en1.mp3"></audio><p class="meta">first audio 1,063 ms &#183; 1.24&#215; real time &#183; UTMOS 4.45</p></li><li><p class="said" lang="en">You&#x27;ve been at it for two hours. How about a glass of water and a little stretch?</p><audio controls preload="none" src="audio/kokoro_v1_en2.mp3"></audio><p class="meta">first audio 1,266 ms &#183; 1.43&#215; real time &#183; UTMOS 4.44</p></li><li><p class="said" lang="en">That&#x27;s your fifth gym day in a row. I&#x27;m really proud of you, and I bet your legs have opinions about it.</p><audio controls preload="none" src="audio/kokoro_v1_en3.mp3"></audio><p class="meta">first audio 1,426 ms &#183; 1.51&#215; real time &#183; UTMOS 4.40</p></li></ul></section></div>
+  </section>
+
+  <section class="block" aria-labelledby="h-voices">
+    <h2 id="h-voices">The designed reference voices</h2>
+    <p>Designed from a description with Qwen3-TTS 1.7B VoiceDesign (once, on a desktop GPU), then the same voice in German by cloning the English clip with Qwen3-TTS 1.7B Base. No real person's voice. The cloning models in this benchmark speak with <b>Warm</b>.</p>
+    <div class="grid2"><section class="voice"><h3>Warm</h3><p class="brief">&#8220;A warm, friendly young woman in her twenties. Soft, bright and gently playful, with a smile in her voice. Calm, encouraging and clear, at a relaxed natural pace. Cozy and caring, never childish, never breathy or whispery.&#8221;</p><ul class="clips"><li><p class="said" lang="en">Hey, it&#x27;s me, Ami. I&#x27;m so glad you&#x27;re here. Let&#x27;s take today one small step at a time, and I&#x27;ll keep track of the rest for you.</p><audio controls preload="none" src="audio/voice_warm_en.mp3"></audio><p class="meta">English &#183; UTMOS 3.61</p></li><li><p class="said" lang="de">Hey, ich bin&#x27;s, Ami. Schön, dass du da bist. Lass uns den Tag Schritt für Schritt angehen, und ich behalte den Rest für dich im Blick.</p><audio controls preload="none" src="audio/voice_warm_de.mp3"></audio><p class="meta">German (cloned from the English clip) &#183; UTMOS 3.94</p></li></ul></section><section class="voice"><h3>Bright</h3><p class="brief">&#8220;A cheerful young woman with a light, clear, medium-high voice and lively, upbeat energy. Cute and playful but natural, with expressive intonation and a quick smile. Crisp, clear diction.&#8221;</p><ul class="clips"><li><p class="said" lang="en">Hey, it&#x27;s me, Ami. I&#x27;m so glad you&#x27;re here. Let&#x27;s take today one small step at a time, and I&#x27;ll keep track of the rest for you.</p><audio controls preload="none" src="audio/voice_bright_en.mp3"></audio><p class="meta">English &#183; UTMOS 3.50</p></li><li><p class="said" lang="de">Hey, ich bin&#x27;s, Ami. Schön, dass du da bist. Lass uns den Tag Schritt für Schritt angehen, und ich behalte den Rest für dich im Blick.</p><audio controls preload="none" src="audio/voice_bright_de.mp3"></audio><p class="meta">German (cloned from the English clip) &#183; UTMOS 3.23</p></li></ul></section><section class="voice"><h3>Soft</h3><p class="brief">&#8220;A gentle, soothing young woman with a soft, slightly low, velvety voice. Patient, grounding and reassuring, unhurried, with warm natural intonation, like a close friend sitting next to you.&#8221;</p><ul class="clips"><li><p class="said" lang="en">Hey, it&#x27;s me, Ami. I&#x27;m so glad you&#x27;re here. Let&#x27;s take today one small step at a time, and I&#x27;ll keep track of the rest for you.</p><audio controls preload="none" src="audio/voice_soft_en.mp3"></audio><p class="meta">English &#183; UTMOS 4.39</p></li><li><p class="said" lang="de">Hey, ich bin&#x27;s, Ami. Schön, dass du da bist. Lass uns den Tag Schritt für Schritt angehen, und ich behalte den Rest für dich im Blick.</p><audio controls preload="none" src="audio/voice_soft_de.mp3"></audio><p class="meta">German (cloned from the English clip) &#183; UTMOS 4.24</p></li></ul></section></div>
+  </section>
+
+  <section class="block notes" aria-labelledby="h-how">
+    <h2 id="h-how">How it was measured</h2>
+    <p><b>Board.</b> Jetson Orin Nano Engineering Reference Developer Kit Super, 8 GB (7.4 GiB usable), JetPack 6.2 (L4T R36.4.3), CUDA 12.6, Python 3.10, 6 CPU cores, the board's default power mode. The board was serving other work at the time (a web backend and an idle Ollama), as it would in use.</p>
+    <p><b>Each model</b> in its own virtual environment (GPU models with PyTorch 2.8 from NVIDIA's Jetson AI Lab index), loaded once per language, warmed up once, then each line spoken once and timed.</p>
+    <p><b>Realism</b> is predicted, not a listening test: UTMOS (utmos22_strong) on every clip. It rewards clean, neutral read-aloud speech, so a plain preset voice can outscore a livelier one, and it says nothing about whether a voice sounds like anyone in particular. Listen to the clips to judge for yourself.</p>
+  </section>
+</div>
+</body>
+</html>

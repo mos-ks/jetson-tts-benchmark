@@ -1,0 +1,41 @@
+{
+ "warm": {
+  "instruct": "A warm, friendly young woman in her twenties. Soft, bright and gently playful, with a smile in her voice. Calm, encouraging and clear, at a relaxed natural pace. Cozy and caring, never childish, never breathy or whispery.",
+  "en": {
+   "wav": "ami_warm_en.wav",
+   "text": "Hey, it's me, Ami. I'm so glad you're here. Let's take today one small step at a time, and I'll keep track of the rest for you.",
+   "sample_rate": 24000
+  },
+  "de": {
+   "wav": "ami_warm_de.wav",
+   "text": "Hey, ich bin's, Ami. Schön, dass du da bist. Lass uns den Tag Schritt für Schritt angehen, und ich behalte den Rest für dich im Blick.",
+   "sample_rate": 24000
+  }
+ },
+ "bright": {
+  "instruct": "A cheerful young woman with a light, clear, medium-high voice and lively, upbeat energy. Cute and playful but natural, with expressive intonation and a quick smile. Crisp, clear diction.",
+  "en": {
+   "wav": "ami_bright_en.wav",
+   "text": "Hey, it's me, Ami. I'm so glad you're here. Let's take today one small step at a time, and I'll keep track of the rest for you.",
+   "sample_rate": 24000
+  },
+  "de": {
+   "wav": "ami_bright_de.wav",
+   "text": "Hey, ich bin's, Ami. Schön, dass du da bist. Lass uns den Tag Schritt für Schritt angehen, und ich behalte den Rest für dich im Blick.",
+   "sample_rate": 24000
+  }
+ },
+ "soft": {
+  "instruct": "A gentle, soothing young woman with a soft, slightly low, velvety voice. Patient, grounding and reassuring, unhurried, with warm natural intonation, like a close friend sitting next to you.",
+  "en": {
+   "wav": "ami_soft_en.wav",
+   "text": "Hey, it's me, Ami. I'm so glad you're here. Let's take today one small step at a time, and I'll keep track of the rest for you.",
+   "sample_rate": 24000
+  },
+  "de": {
+   "wav": "ami_soft_de.wav",
+   "text": "Hey, ich bin's, Ami. Schön, dass du da bist. Lass uns den Tag Schritt für Schritt angehen, und ich behalte den Rest für dich im Blick.",
+   "sample_rate": 24000
+  }
+ }
+}

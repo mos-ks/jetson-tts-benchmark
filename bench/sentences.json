@@ -1,0 +1,13 @@
+{
+  "comment": "What Ami says, in her house voice (warm, short, invites): the same lines for every model, so speed and sound compare like for like.",
+  "en": [
+    {"id": "en1", "text": "Good morning! I saved your three tasks for today."},
+    {"id": "en2", "text": "You've been at it for two hours. How about a glass of water and a little stretch?"},
+    {"id": "en3", "text": "That's your fifth gym day in a row. I'm really proud of you, and I bet your legs have opinions about it."}
+  ],
+  "de": [
+    {"id": "de1", "text": "Guten Morgen! Ich habe deine drei Aufgaben für heute gespeichert."},
+    {"id": "de2", "text": "Du sitzt jetzt seit zwei Stunden dran. Wie wär's mit einem Glas Wasser und einer kleinen Pause?"},
+    {"id": "de3", "text": "Das ist schon dein fünfter Tag in Folge im Gym. Ich bin richtig stolz auf dich."}
+  ]
+}

@@ -1,0 +1,55 @@
+{
+ "model": "kokoro_current",
+ "when": "2026-10-22 16:18:58",
+ "base_used_mb": 3112,
+ "langs": {
+  "en": {
+   "load_s": 2.85,
+   "sample_rate": 24000,
+   "info": {
+    "voice": "af_bella",
+    "device": "cpu (onnxruntime)",
+    "model": "kokoro-v0_19.onnx"
+   }
+  },
+  "de": {
+   "error": "NotImplementedError: Kokoro has no German voice"
+  }
+ },
+ "lines": [
+  {
+   "id": "en1",
+   "lang": "en",
+   "ttfa_s": 1.039,
+   "total_s": 2.807,
+   "audio_s": 2.901,
+   "x_realtime": 1.03
+  },
+  {
+   "id": "en2",
+   "lang": "en",
+   "ttfa_s": 1.742,
+   "total_s": 3.639,
+   "audio_s": 3.925,
+   "x_realtime": 1.08
+  },
+  {
+   "id": "en3",
+   "lang": "en",
+   "ttfa_s": 1.746,
+   "total_s": 4.34,
+   "audio_s": 5.419,
+   "x_realtime": 1.25
+  }
+ ],
+ "peak_used_mb": 3680,
+ "process_hwm_mb": 888,
+ "power_mw": {
+  "mean": 7690,
+  "max": 10898
+ },
+ "summary": {
+  "ttfa_ms_median": 1742,
+  "x_realtime_median": 1.08
+ }
+}
