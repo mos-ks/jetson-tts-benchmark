@@ -50,6 +50,8 @@ def median(xs):
 
 
 def mp3(src, dst):
+    if os.path.exists(dst) and not os.path.exists(src):
+        return
     if os.path.exists(dst) and os.path.getmtime(dst) >= os.path.getmtime(src):
         return
     subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", src, "-ac", "1", "-b:a", "96k", dst], check=True)
@@ -102,9 +104,10 @@ for key, name, size, runs, lic, voice, note in MODELS:
             points.append(row)
         for l in lines:
             src = os.path.join(RESULTS, key, l["id"] + ".wav")
+            dst = f"{key}_{l['id']}.mp3"
             if os.path.exists(src):
-                dst = f"{key}_{l['id']}.mp3"
                 mp3(src, os.path.join(AUDIO, dst))
+            if os.path.exists(os.path.join(AUDIO, dst)):  # the WAVs are not in git; the MP3s are
                 clips.append((l["id"], dst, mos.get(key, {}).get(l["id"]), l))
     if clips:
         players.append((key, name, runs, clips))
@@ -159,46 +162,101 @@ llm_model = next((r["llm"] for r in llm_rows if r.get("llm")), None)
 
 
 # ── the speed to realism plot (SVG, drawn to one scale) ──────────────────────
+def short_name(p):
+    """The plot's label: the model without its vendor or voice list, plus where it ran.
+    The language is the marker's shape and colour (see the legend)."""
+    n = p["name"].split(" (")[0].replace("Kyutai ", "").replace("-100M", "")
+    return n + (" GPU" if p["key"].endswith("_gpu") else "")
+
+
 def plot():
-    W, H, L, R, T, B = 760, 380, 58, 20, 18, 52
+    W, H, L, R, T, B = 960, 520, 58, 24, 34, 56
     xmin, xmax = math.log10(0.25), math.log10(32)
-    ymin, ymax = 1.5, 4.5
+    lo = min([p["mos"] for p in points] + [ref_mos or 5])
+    ymin, ymax = max(1.0, math.floor((lo - 0.25) * 2) / 2), 4.75
     X = lambda v: L + (math.log10(v) - xmin) / (xmax - xmin) * (W - L - R)
     Y = lambda v: T + (ymax - v) / (ymax - ymin) * (H - T - B)
     out = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="Speed against realism for each model and language" class="plot">']
     # slower than speech
     out.append(f'<rect x="{L}" y="{T}" width="{X(1) - L:.1f}" height="{H - T - B}" class="slow"/>')
-    out.append(f'<text x="{L + 8}" y="{H - B - 10}" class="zone">slower than real time</text>')
+    zone = (L + 8, H - B - 10, "slower than real time")
+    out.append(f'<text x="{zone[0]}" y="{zone[1]}" class="zone">{zone[2]}</text>')
     for v in (0.25, 0.5, 1, 2, 4, 8, 16, 32):
         x = X(v)
         out.append(f'<line x1="{x:.1f}" x2="{x:.1f}" y1="{T}" y2="{H - B}" class="{"edge" if v == 1 else "grid"}"/>')
         out.append(f'<text x="{x:.1f}" y="{H - B + 18}" class="tick" text-anchor="middle">{v:g}&#215;</text>')
-    for v in (1.5, 2, 2.5, 3, 3.5, 4, 4.5):
+    v = ymin
+    while v <= ymax + 1e-9:
         y = Y(v)
         out.append(f'<line x1="{L}" x2="{W - R}" y1="{y:.1f}" y2="{y:.1f}" class="grid"/>')
         out.append(f'<text x="{L - 8}" y="{y + 4:.1f}" class="tick" text-anchor="end">{v:g}</text>')
-    out.append(f'<text x="{(L + W - R) / 2}" y="{H - 8}" class="axis" text-anchor="middle">speed: seconds of speech per second of work (log scale)</text>')
+        v += 0.5
+    out.append(f'<text x="{(L + W - R) / 2}" y="{H - 10}" class="axis" text-anchor="middle">speed: seconds of speech per second of work (log scale)</text>')
     out.append(f'<text transform="translate(14 {(T + H - B) / 2}) rotate(-90)" class="axis" text-anchor="middle">realism (UTMOS, 1-5)</text>')
+
+    # Labels are placed so that none overlaps another label, a marker or the reference line's label.
+    # Text widths are estimated (12 px semibold, about 7.2 px a character, rounded up).
+    CW, LH = 7.4, 15
+    obstacles = []  # boxes (x0, y0, x1, y1)
+    hit = lambda a, b: a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+    inside = lambda b: b[0] >= 2 and b[2] <= W - 2 and b[1] >= 2 and b[3] <= H - B - 2
+    zw = len(zone[2]) * CW
+    obstacles.append((zone[0] - 2, zone[1] - 12, zone[0] + zw, zone[1] + 4))
+
+    pts = []
+    for p in points:
+        x, y = X(min(max(p["speed"], 0.26), 31)), Y(min(max(p["mos"], ymin + 0.02), ymax - 0.02))
+        pts.append((p, x, y))
+        obstacles.append((x - 8, y - 8, x + 8, y + 8))
+
     if ref_mos:
         y = Y(ref_mos)
         out.append(f'<line x1="{L}" x2="{W - R}" y1="{y:.1f}" y2="{y:.1f}" class="ref"/>')
-        out.append(f'<text x="{W - R - 6}" y="{y - 6:.1f}" class="reflabel" text-anchor="end">the designed reference voice ({ref_mos:.2f})</text>')
-    placed = []
-    for p in sorted(points, key=lambda p: (p["speed"], p["mos"])):
-        x, y = X(min(max(p["speed"], 0.26), 31)), Y(min(max(p["mos"], ymin + 0.02), ymax - 0.02))
-        cls = "en" if p["lang"] == "en" else "de"
+        text = f"the designed reference voice ({ref_mos:.2f})"
+        w = len(text) * CW
+        # the first spot along the line, above or below it, that no marker covers
+        for ly, x0 in [(y - 7, W - R - 6 - w), (y + 16, W - R - 6 - w), (y - 7, X(1) + 8), (y + 16, X(1) + 8), (y - 7, L + 8), (y + 16, L + 8)]:
+            box = (x0 - 2, ly - 12, x0 + w + 2, ly + 4)
+            if not any(hit(box, o) for o in obstacles):
+                break
+        obstacles.append(box)
+        out.append(f'<text x="{x0:.1f}" y="{ly:.1f}" class="reflabel">{esc(text)}</text>')
+
+    # the most crowded markers choose first
+    crowd = lambda q: sum(1 for o in pts if abs(o[1] - q[1]) < 140 and abs(o[2] - q[2]) < 40)
+    marks, labels = [], []
+    for p, x, y in sorted(pts, key=lambda q: (-crowd(q), q[1])):
+        text = short_name(p)
+        w, h = len(text) * CW, LH
+        best = None
+        for step in range(0, 12):
+            d = 9 + step * 13
+            # right, left, above, below, then the diagonals
+            for dx, dy in ((1, 0), (-1, 0), (0, -1), (0, 1), (1, -1), (1, 1), (-1, -1), (-1, 1)):
+                cx = x + dx * (d + w / 2)
+                cy = y + dy * (d + h / 2)
+                box = (cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2)
+                if inside(box) and not any(hit(box, o) for o in obstacles):
+                    best = (box, step, dy)
+                    break
+            if best:
+                break
+        if not best:  # nowhere free: put it at the right, as before
+            best = ((x + 10, y - h / 2, x + 10 + w, y + h / 2), 0, 0)
+        box, step, dy = best
+        obstacles.append(box)
+        if step > 0 or dy:  # a leader from the marker to the nearest point of the label
+            nx, ny = min(max(x, box[0]), box[2]), min(max(y, box[1]), box[3])
+            dist = math.hypot(nx - x, ny - y) or 1
+            sx, sy = x + (nx - x) / dist * 7, y + (ny - y) / dist * 7
+            labels.append(f'<line x1="{sx:.1f}" y1="{sy:.1f}" x2="{nx:.1f}" y2="{ny:.1f}" class="leader"/>')
+        labels.append(f'<text x="{box[0]:.1f}" y="{box[3] - 3.5:.1f}" class="plabel">{esc(text)}</text>')
+        tip = f'{esc(p["name"])} ({p["runs"]}, {"English" if p["lang"] == "en" else "German"}): {p["speed"]:.2f}x, UTMOS {p["mos"]:.2f}'
         if p["lang"] == "en":
-            out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="6" class="pt {cls}"><title>{esc(p["name"])} ({p["lang"]}): {p["speed"]:.2f}x, UTMOS {p["mos"]:.2f}</title></circle>')
+            marks.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="6" class="pt en"><title>{tip}</title></circle>')
         else:
-            out.append(f'<rect x="{x - 5.5:.1f}" y="{y - 5.5:.1f}" width="11" height="11" class="pt {cls}"><title>{esc(p["name"])} ({p["lang"]}): {p["speed"]:.2f}x, UTMOS {p["mos"]:.2f}</title></rect>')
-        label = f'{p["name"].split(" (")[0]}{" GPU" if p["key"].endswith("_gpu") else ""} {p["lang"].upper()}'
-        ly = y - 10
-        for (px, py) in placed:  # keep labels apart
-            if abs(px - x) < 120 and abs(py - ly) < 14:
-                ly = py + 16
-        anchor, lx = ("end", x - 10) if x > W - 190 else ("start", x + 10)
-        placed.append((x, ly))
-        out.append(f'<text x="{lx:.1f}" y="{ly:.1f}" class="plabel" text-anchor="{anchor}">{esc(label)}</text>')
+            marks.append(f'<rect x="{x - 5.5:.1f}" y="{y - 5.5:.1f}" width="11" height="11" class="pt de"><title>{tip}</title></rect>')
+    out += labels + marks  # markers on top of the leaders
     out.append("</svg>")
     return "\n".join(out)
 
@@ -274,7 +332,7 @@ for d, instruct, items in design_cards:
     cards.append(f'<section class="voice"><h3>{esc(d.capitalize())}</h3><p class="brief">&#8220;{esc(instruct)}&#8221;</p><ul class="clips">{li}</ul></section>')
 
 total = len(MODELS)
-stamp = time.strftime("%Y-%m-%d %H:%M")
+stamp = os.environ.get("STAMP") or time.strftime("%Y-%m-%d %H:%M")  # STAMP keeps the date of the results when only the page changes
 page = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -301,19 +359,19 @@ page = f"""<!doctype html>
   --accent: #a891ff; --olive: #c2cf6c; --slow: #251d33; --good: #6fcf97; --warn: #e3a35a; --bad: #ef7d7d; color-scheme: dark; }}
 html {{ -webkit-text-size-adjust: 100%; }}
 body {{ margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 var(--body); }}
-.wrap {{ max-width: 1040px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }}
+.wrap {{ max-width: 1200px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }}
 h1, h2, h3 {{ font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }}
 h1 {{ font-size: clamp(30px, 5vw, 46px); font-weight: 700; letter-spacing: -0.01em; }}
 h2 {{ font-size: 24px; font-weight: 700; }}
 h3 {{ font-size: 18px; font-weight: 700; }}
-p {{ margin: 0; max-width: 68ch; }}
+p {{ margin: 0; }}
 .lede {{ display: grid; gap: 12px; }}
 .lede p {{ color: var(--muted); font-size: 18px; }}
 .status {{ font-family: var(--mono); font-size: 13px; color: var(--muted); letter-spacing: 0.02em; }}
 .status b {{ color: var(--accent); }}
 section.block {{ display: grid; gap: 14px; min-width: 0; }}
 .panel {{ background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }}
-.plot {{ width: 100%; height: auto; display: block; }}
+.plot {{ width: 100%; min-width: 640px; height: auto; display: block; }}
 .plot .grid {{ stroke: var(--line); stroke-width: 1; }}
 .plot .edge {{ stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 3; }}
 .plot .slow {{ fill: var(--slow); }}
@@ -323,7 +381,8 @@ section.block {{ display: grid; gap: 14px; min-width: 0; }}
 .plot .reflabel {{ fill: var(--accent); font: 12px var(--body); }}
 .plot .pt.en {{ fill: var(--accent); }}
 .plot .pt.de {{ fill: var(--olive); }}
-.plot .plabel {{ fill: var(--fg); font: 600 12px var(--body); }}
+.plot .plabel {{ fill: var(--fg); font: 600 12px var(--body); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }}
+.plot .leader {{ stroke: var(--muted); stroke-width: 1; }}
 .legend {{ display: flex; flex-wrap: wrap; gap: 18px; font-size: 14px; color: var(--muted); }}
 .legend i {{ display: inline-block; width: 11px; height: 11px; margin-right: 6px; vertical-align: -1px; }}
 .legend .en {{ background: var(--accent); border-radius: 50%; }}
@@ -360,8 +419,8 @@ a:focus-visible, audio:focus-visible {{ outline: 2px solid var(--accent); outlin
 
   <section class="block" aria-labelledby="h-plot">
     <h2 id="h-plot">Speed against realism</h2>
-    <div class="panel">{plot()}</div>
-    <div class="legend"><span><i class="en"></i>English</span><span><i class="de"></i>German</span><span>Right of the dashed line it speaks faster than real time. Realism is UTMOS, a predictor of listeners' opinion scores (1 to 5), trained on English: German scores are rougher.</span></div>
+    <div class="panel scroll">{plot()}</div>
+    <div class="legend"><span><i class="en"></i>English</span><span><i class="de"></i>German</span><span>Labels name the model, and GPU when it ran on the GPU. Right of the dashed line it speaks faster than real time. Realism is UTMOS, a predictor of listeners' opinion scores (1 to 5), trained on English: German scores are rougher.</span></div>
   </section>
 
   <section class="block" aria-labelledby="h-table">

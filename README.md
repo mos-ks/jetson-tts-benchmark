@@ -6,6 +6,13 @@ How fast, how heavy and how natural open text-to-speech models are on a **Jetson
 
 It was made to pick a self-hosted voice for a personal assistant that runs on a Jetson, in place of Kokoro-82M v0.19 (English) and Piper (German): a voice of its own, fast enough to answer without a pause, on the same board.
 
+## In short
+
+- **English, fast and natural:** Kokoro-82M v1.0 on the GPU gives first audio in 340 ms at 5.8x real time with UTMOS 4.44, for +697 MB. Piper on the CPU is the lightest and fastest (181 ms, 12x, +180 MB) at UTMOS 4.22.
+- **German:** no model here scores well. Kyutai Pocket TTS is the most natural (3.3), but only its GPU run keeps up with speech (1.53x); Piper is fast but scores 2.5. UTMOS is trained on English, so listen to the German clips before deciding.
+- **Next to a running LLM** on the same GPU, Pocket TTS drops below real time (about 0.9x); Kokoro v1.0 on the GPU (3.3x) and Piper on the CPU (10x) keep a wide margin.
+- **Too big for 8 GB alongside other work:** Qwen3-TTS 0.6B, Chatterbox, OmniVoice and MOSS-TTS-Nano on the GPU each hit the 800 MB free-memory floor while loading.
+
 ## Results
 
 <!-- results -->
@@ -76,8 +83,10 @@ The small models run twice, on the CPU and on the GPU (`<model>_gpu`: onnxruntim
 
 ```bash
 python tools/mos.py          # UTMOS for every clip -> results/mos.json
-python tools/build_page.py   # docs/index.html and this README's table (needs ffmpeg)
+python tools/build_page.py   # docs/index.html and this README's tables (needs ffmpeg)
 ```
+
+`build_page.py` takes the clips from `docs/audio/` when the WAVs are not there (they are not in git), so the page can be rebuilt from a fresh clone; set `STAMP="YYYY-MM-DD HH:MM"` to keep the results' date when only the page changes.
 
 Adding a model: an adapter in `bench/adapters/<name>.py` with `make(lang, voice)` returning an object with `sample_rate` and `stream(text)` (an iterator of float32 chunks), and its install in `setup/setup.sh`.
 

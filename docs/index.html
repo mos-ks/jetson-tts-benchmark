@@ -24,19 +24,19 @@
   --accent: #a891ff; --olive: #c2cf6c; --slow: #251d33; --good: #6fcf97; --warn: #e3a35a; --bad: #ef7d7d; color-scheme: dark; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 var(--body); }
-.wrap { max-width: 1040px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
 h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
 h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 700; letter-spacing: -0.01em; }
 h2 { font-size: 24px; font-weight: 700; }
 h3 { font-size: 18px; font-weight: 700; }
-p { margin: 0; max-width: 68ch; }
+p { margin: 0; }
 .lede { display: grid; gap: 12px; }
 .lede p { color: var(--muted); font-size: 18px; }
 .status { font-family: var(--mono); font-size: 13px; color: var(--muted); letter-spacing: 0.02em; }
 .status b { color: var(--accent); }
 section.block { display: grid; gap: 14px; min-width: 0; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
-.plot { width: 100%; height: auto; display: block; }
+.plot { width: 100%; min-width: 640px; height: auto; display: block; }
 .plot .grid { stroke: var(--line); stroke-width: 1; }
 .plot .edge { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 3; }
 .plot .slow { fill: var(--slow); }
@@ -46,7 +46,8 @@ section.block { display: grid; gap: 14px; min-width: 0; }
 .plot .reflabel { fill: var(--accent); font: 12px var(--body); }
 .plot .pt.en { fill: var(--accent); }
 .plot .pt.de { fill: var(--olive); }
-.plot .plabel { fill: var(--fg); font: 600 12px var(--body); }
+.plot .plabel { fill: var(--fg); font: 600 12px var(--body); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.plot .leader { stroke: var(--muted); stroke-width: 1; }
 .legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 14px; color: var(--muted); }
 .legend i { display: inline-block; width: 11px; height: 11px; margin-right: 6px; vertical-align: -1px; }
 .legend .en { background: var(--accent); border-radius: 50%; }
@@ -83,77 +84,78 @@ a:focus-visible, audio:focus-visible { outline: 2px solid var(--accent); outline
 
   <section class="block" aria-labelledby="h-plot">
     <h2 id="h-plot">Speed against realism</h2>
-    <div class="panel"><svg viewBox="0 0 760 380" role="img" aria-label="Speed against realism for each model and language" class="plot">
-<rect x="58" y="18" width="194.9" height="310" class="slow"/>
-<text x="66" y="318" class="zone">slower than real time</text>
-<line x1="58.0" x2="58.0" y1="18" y2="328" class="grid"/>
-<text x="58.0" y="346" class="tick" text-anchor="middle">0.25&#215;</text>
-<line x1="155.4" x2="155.4" y1="18" y2="328" class="grid"/>
-<text x="155.4" y="346" class="tick" text-anchor="middle">0.5&#215;</text>
-<line x1="252.9" x2="252.9" y1="18" y2="328" class="edge"/>
-<text x="252.9" y="346" class="tick" text-anchor="middle">1&#215;</text>
-<line x1="350.3" x2="350.3" y1="18" y2="328" class="grid"/>
-<text x="350.3" y="346" class="tick" text-anchor="middle">2&#215;</text>
-<line x1="447.7" x2="447.7" y1="18" y2="328" class="grid"/>
-<text x="447.7" y="346" class="tick" text-anchor="middle">4&#215;</text>
-<line x1="545.1" x2="545.1" y1="18" y2="328" class="grid"/>
-<text x="545.1" y="346" class="tick" text-anchor="middle">8&#215;</text>
-<line x1="642.6" x2="642.6" y1="18" y2="328" class="grid"/>
-<text x="642.6" y="346" class="tick" text-anchor="middle">16&#215;</text>
-<line x1="740.0" x2="740.0" y1="18" y2="328" class="grid"/>
-<text x="740.0" y="346" class="tick" text-anchor="middle">32&#215;</text>
-<line x1="58" x2="740" y1="328.0" y2="328.0" class="grid"/>
-<text x="50" y="332.0" class="tick" text-anchor="end">1.5</text>
-<line x1="58" x2="740" y1="276.3" y2="276.3" class="grid"/>
-<text x="50" y="280.3" class="tick" text-anchor="end">2</text>
-<line x1="58" x2="740" y1="224.7" y2="224.7" class="grid"/>
-<text x="50" y="228.7" class="tick" text-anchor="end">2.5</text>
-<line x1="58" x2="740" y1="173.0" y2="173.0" class="grid"/>
-<text x="50" y="177.0" class="tick" text-anchor="end">3</text>
-<line x1="58" x2="740" y1="121.3" y2="121.3" class="grid"/>
-<text x="50" y="125.3" class="tick" text-anchor="end">3.5</text>
-<line x1="58" x2="740" y1="69.7" y2="69.7" class="grid"/>
-<text x="50" y="73.7" class="tick" text-anchor="end">4</text>
-<line x1="58" x2="740" y1="18.0" y2="18.0" class="grid"/>
-<text x="50" y="22.0" class="tick" text-anchor="end">4.5</text>
-<text x="399.0" y="372" class="axis" text-anchor="middle">speed: seconds of speech per second of work (log scale)</text>
-<text transform="translate(14 173.0) rotate(-90)" class="axis" text-anchor="middle">realism (UTMOS, 1-5)</text>
-<line x1="58" x2="740" y1="49.4" y2="49.4" class="ref"/>
-<text x="734" y="43.4" class="reflabel" text-anchor="end">the designed reference voice (4.20)</text>
-<circle cx="155.4" cy="91.0" r="6" class="pt en"><title>MOSS-TTS-Nano-100M (en): 0.50x, UTMOS 3.79</title></circle>
-<text x="165.4" y="81.0" class="plabel" text-anchor="start">MOSS-TTS-Nano-100M EN</text>
-<rect x="152.7" y="157.0" width="11" height="11" class="pt de"><title>MOSS-TTS-Nano-100M (de): 0.51x, UTMOS 3.10</title></rect>
-<text x="168.2" y="152.5" class="plabel" text-anchor="start">MOSS-TTS-Nano-100M DE</text>
-<rect x="152.7" y="132.2" width="11" height="11" class="pt de"><title>Kyutai Pocket TTS (de): 0.51x, UTMOS 3.34</title></rect>
-<text x="168.2" y="127.7" class="plabel" text-anchor="start">Kyutai Pocket TTS DE</text>
-<circle cx="158.2" cy="24.0" r="6" class="pt en"><title>Kyutai Pocket TTS (en): 0.51x, UTMOS 4.44</title></circle>
-<text x="168.2" y="14.0" class="plabel" text-anchor="start">Kyutai Pocket TTS EN</text>
-<circle cx="259.7" cy="26.6" r="6" class="pt en"><title>Kyutai Pocket TTS small (english_18m) (en): 1.05x, UTMOS 4.42</title></circle>
-<text x="269.7" y="30.0" class="plabel" text-anchor="start">Kyutai Pocket TTS small EN</text>
-<circle cx="263.7" cy="62.6" r="6" class="pt en"><title>Kokoro-82M v0.19 (en): 1.08x, UTMOS 4.07</title></circle>
-<text x="273.7" y="52.6" class="plabel" text-anchor="start">Kokoro-82M v0.19 EN</text>
-<circle cx="296.1" cy="32.2" r="6" class="pt en"><title>Kyutai Pocket TTS small (english_18m) (en): 1.36x, UTMOS 4.36</title></circle>
-<text x="306.1" y="68.6" class="plabel" text-anchor="start">Kyutai Pocket TTS small GPU EN</text>
-<circle cx="303.1" cy="24.1" r="6" class="pt en"><title>Kokoro-82M v1.0 (en): 1.43x, UTMOS 4.44</title></circle>
-<text x="313.1" y="14.1" class="plabel" text-anchor="start">Kokoro-82M v1.0 EN</text>
-<rect x="307.1" y="138.8" width="11" height="11" class="pt de"><title>Kyutai Pocket TTS (de): 1.53x, UTMOS 3.28</title></rect>
-<text x="322.6" y="134.3" class="plabel" text-anchor="start">Kyutai Pocket TTS GPU DE</text>
-<circle cx="312.6" cy="26.0" r="6" class="pt en"><title>Kyutai Pocket TTS (en): 1.53x, UTMOS 4.42</title></circle>
-<text x="322.6" y="30.1" class="plabel" text-anchor="start">Kyutai Pocket TTS GPU EN</text>
-<circle cx="449.5" cy="59.1" r="6" class="pt en"><title>Kokoro-82M v0.19 (en): 4.05x, UTMOS 4.10</title></circle>
-<text x="459.5" y="49.1" class="plabel" text-anchor="start">Kokoro-82M v0.19 GPU EN</text>
-<circle cx="468.6" cy="20.4" r="6" class="pt en"><title>Piper (ramona-low, amy-medium) (en): 4.64x, UTMOS 4.48</title></circle>
-<text x="478.6" y="10.4" class="plabel" text-anchor="start">Piper GPU EN</text>
-<rect x="491.0" y="220.8" width="11" height="11" class="pt de"><title>Piper (ramona-low, amy-medium) (de): 5.66x, UTMOS 2.48</title></rect>
-<text x="506.5" y="216.3" class="plabel" text-anchor="start">Piper GPU DE</text>
-<circle cx="500.7" cy="24.5" r="6" class="pt en"><title>Kokoro-82M v1.0 (en): 5.83x, UTMOS 4.44</title></circle>
-<text x="510.7" y="26.4" class="plabel" text-anchor="start">Kokoro-82M v1.0 GPU EN</text>
-<circle cx="603.4" cy="46.9" r="6" class="pt en"><title>Piper (ramona-low, amy-medium) (en): 12.11x, UTMOS 4.22</title></circle>
-<text x="593.4" y="42.4" class="plabel" text-anchor="end">Piper EN</text>
-<rect x="631.8" y="223.8" width="11" height="11" class="pt de"><title>Piper (ramona-low, amy-medium) (de): 15.41x, UTMOS 2.46</title></rect>
-<text x="627.3" y="219.3" class="plabel" text-anchor="end">Piper DE</text>
+    <div class="panel scroll"><svg viewBox="0 0 960 520" role="img" aria-label="Speed against realism for each model and language" class="plot">
+<rect x="58" y="34" width="250.9" height="430" class="slow"/>
+<text x="66" y="454" class="zone">slower than real time</text>
+<line x1="58.0" x2="58.0" y1="34" y2="464" class="grid"/>
+<text x="58.0" y="482" class="tick" text-anchor="middle">0.25&#215;</text>
+<line x1="183.4" x2="183.4" y1="34" y2="464" class="grid"/>
+<text x="183.4" y="482" class="tick" text-anchor="middle">0.5&#215;</text>
+<line x1="308.9" x2="308.9" y1="34" y2="464" class="edge"/>
+<text x="308.9" y="482" class="tick" text-anchor="middle">1&#215;</text>
+<line x1="434.3" x2="434.3" y1="34" y2="464" class="grid"/>
+<text x="434.3" y="482" class="tick" text-anchor="middle">2&#215;</text>
+<line x1="559.7" x2="559.7" y1="34" y2="464" class="grid"/>
+<text x="559.7" y="482" class="tick" text-anchor="middle">4&#215;</text>
+<line x1="685.1" x2="685.1" y1="34" y2="464" class="grid"/>
+<text x="685.1" y="482" class="tick" text-anchor="middle">8&#215;</text>
+<line x1="810.6" x2="810.6" y1="34" y2="464" class="grid"/>
+<text x="810.6" y="482" class="tick" text-anchor="middle">16&#215;</text>
+<line x1="936.0" x2="936.0" y1="34" y2="464" class="grid"/>
+<text x="936.0" y="482" class="tick" text-anchor="middle">32&#215;</text>
+<line x1="58" x2="936" y1="464.0" y2="464.0" class="grid"/>
+<text x="50" y="468.0" class="tick" text-anchor="end">2</text>
+<line x1="58" x2="936" y1="385.8" y2="385.8" class="grid"/>
+<text x="50" y="389.8" class="tick" text-anchor="end">2.5</text>
+<line x1="58" x2="936" y1="307.6" y2="307.6" class="grid"/>
+<text x="50" y="311.6" class="tick" text-anchor="end">3</text>
+<line x1="58" x2="936" y1="229.5" y2="229.5" class="grid"/>
+<text x="50" y="233.5" class="tick" text-anchor="end">3.5</text>
+<line x1="58" x2="936" y1="151.3" y2="151.3" class="grid"/>
+<text x="50" y="155.3" class="tick" text-anchor="end">4</text>
+<line x1="58" x2="936" y1="73.1" y2="73.1" class="grid"/>
+<text x="50" y="77.1" class="tick" text-anchor="end">4.5</text>
+<text x="497.0" y="510" class="axis" text-anchor="middle">speed: seconds of speech per second of work (log scale)</text>
+<text transform="translate(14 249.0) rotate(-90)" class="axis" text-anchor="middle">realism (UTMOS, 1-5)</text>
+<line x1="58" x2="936" y1="120.6" y2="120.6" class="ref"/>
+<text x="66.0" y="113.6" class="reflabel">the designed reference voice (4.20)</text>
+<line x1="317.7" y1="79.1" x2="317.7" y2="64.1" class="leader"/>
+<text x="258.5" y="60.6" class="plabel">Pocket TTS small</text>
+<line x1="369.4" y1="99.5" x2="373.5" y2="103.5" class="leader"/>
+<text x="373.5" y="115.0" class="plabel">Pocket TTS small GPU</text>
+<line x1="378.5" y1="77.4" x2="382.6" y2="73.3" class="leader"/>
+<text x="382.6" y="69.8" class="plabel">Kokoro-82M v1.0</text>
+<text x="394.8" y="89.1" class="plabel">Pocket TTS GPU</text>
+<text x="636.9" y="86.9" class="plabel">Kokoro-82M v1.0 GPU</text>
+<text x="196.0" y="86.2" class="plabel">Pocket TTS</text>
+<text x="196.0" y="258.2" class="plabel">Pocket TTS</text>
+<text x="196.0" y="295.7" class="plabel">MOSS-TTS-Nano</text>
+<text x="511.0" y="80.7" class="plabel">Piper GPU</text>
+<text x="769.2" y="120.9" class="plabel">Piper</text>
+<text x="192.4" y="187.5" class="plabel">MOSS-TTS-Nano</text>
+<text x="331.8" y="144.6" class="plabel">Kokoro-82M v0.19</text>
+<text x="394.8" y="268.2" class="plabel">Pocket TTS GPU</text>
+<text x="571.0" y="139.3" class="plabel">Kokoro-82M v0.19 GPU</text>
+<text x="631.5" y="392.3" class="plabel">Piper GPU</text>
+<text x="812.8" y="396.9" class="plabel">Piper</text>
+<circle cx="317.7" cy="86.1" r="6" class="pt en"><title>Kyutai Pocket TTS small (english_18m) (CPU, PyTorch, English): 1.05x, UTMOS 4.42</title></circle>
+<circle cx="364.5" cy="94.5" r="6" class="pt en"><title>Kyutai Pocket TTS small (english_18m) (GPU, PyTorch, English): 1.36x, UTMOS 4.36</title></circle>
+<circle cx="373.6" cy="82.3" r="6" class="pt en"><title>Kokoro-82M v1.0 (CPU, onnxruntime, English): 1.43x, UTMOS 4.44</title></circle>
+<circle cx="385.8" cy="85.1" r="6" class="pt en"><title>Kyutai Pocket TTS (GPU, PyTorch, English): 1.53x, UTMOS 4.42</title></circle>
+<circle cx="627.9" cy="82.9" r="6" class="pt en"><title>Kokoro-82M v1.0 (GPU, onnxruntime CUDA, English): 5.83x, UTMOS 4.44</title></circle>
+<circle cx="187.0" cy="82.2" r="6" class="pt en"><title>Kyutai Pocket TTS (CPU, PyTorch, English): 0.51x, UTMOS 4.44</title></circle>
+<rect x="181.5" y="248.7" width="11" height="11" class="pt de"><title>Kyutai Pocket TTS (CPU, PyTorch, German): 0.51x, UTMOS 3.34</title></rect>
+<rect x="181.5" y="286.2" width="11" height="11" class="pt de"><title>MOSS-TTS-Nano-100M (CPU, onnxruntime, German): 0.51x, UTMOS 3.10</title></rect>
+<circle cx="586.6" cy="76.7" r="6" class="pt en"><title>Piper (ramona-low, amy-medium) (GPU, onnxruntime CUDA, English): 4.64x, UTMOS 4.48</title></circle>
+<circle cx="760.2" cy="116.9" r="6" class="pt en"><title>Piper (ramona-low, amy-medium) (CPU, onnxruntime, English): 12.11x, UTMOS 4.22</title></circle>
+<circle cx="183.4" cy="183.5" r="6" class="pt en"><title>MOSS-TTS-Nano-100M (CPU, onnxruntime, English): 0.50x, UTMOS 3.79</title></circle>
+<circle cx="322.8" cy="140.6" r="6" class="pt en"><title>Kokoro-82M v0.19 (CPU, onnxruntime, English): 1.08x, UTMOS 4.07</title></circle>
+<rect x="380.3" y="258.7" width="11" height="11" class="pt de"><title>Kyutai Pocket TTS (GPU, PyTorch, German): 1.53x, UTMOS 3.28</title></rect>
+<circle cx="562.0" cy="135.3" r="6" class="pt en"><title>Kokoro-82M v0.19 (GPU, onnxruntime CUDA, English): 4.05x, UTMOS 4.10</title></circle>
+<rect x="617.0" y="382.8" width="11" height="11" class="pt de"><title>Piper (ramona-low, amy-medium) (GPU, onnxruntime CUDA, German): 5.66x, UTMOS 2.48</title></rect>
+<rect x="798.3" y="387.4" width="11" height="11" class="pt de"><title>Piper (ramona-low, amy-medium) (CPU, onnxruntime, German): 15.41x, UTMOS 2.46</title></rect>
 </svg></div>
-    <div class="legend"><span><i class="en"></i>English</span><span><i class="de"></i>German</span><span>Right of the dashed line it speaks faster than real time. Realism is UTMOS, a predictor of listeners' opinion scores (1 to 5), trained on English: German scores are rougher.</span></div>
+    <div class="legend"><span><i class="en"></i>English</span><span><i class="de"></i>German</span><span>Labels name the model, and GPU when it ran on the GPU. Right of the dashed line it speaks faster than real time. Realism is UTMOS, a predictor of listeners' opinion scores (1 to 5), trained on English: German scores are rougher.</span></div>
   </section>
 
   <section class="block" aria-labelledby="h-table">
